@@ -1,11 +1,16 @@
 #include "qtreeview.h"
 #include "timelinemodel.h"
 #include "timelinewidget.h"
+#include "timelineview.h"
 
 #include <QApplication>
-
+#include <QToolBar>
 int main(int argc, char *argv[])
 {
+    QColor bg = QColor("#262626");
+    QColor fill = QColor("#202020");
+    QColor seperator = QColor("#313131");
+
     QApplication a(argc, argv);
     //TimelineWidget w;
     //w.show();
@@ -24,10 +29,22 @@ int main(int argc, char *argv[])
     model->addClip(2);
     model->addClip(2);
     //model->add(0);
-    QTreeView* view = new QTreeView();
-    view->setHeaderHidden(true);
+    TimelineView* view = new TimelineView();
+    view->resize(880,230);
+    //view->setSelectionMode(QAbstractItemView::NoSelection);
+    //view->setHeaderHidden(true);
 
     view->setModel(model);
     view->show();
+
+    QToolBar* toolbar = new QToolBar("zoom slider");
+    QSlider* slider = new QSlider(Qt::Horizontal);
+    slider->setRange(1, 50);
+    slider->setValue(50);
+    toolbar->addWidget(slider);
+    toolbar->show();
+
+    QObject::connect(slider,&QSlider::valueChanged,view,&TimelineView::setScale);
+
     return a.exec();
 }

@@ -46,10 +46,10 @@ void TimelineModel::createTrack()
 
 TrackModel *TimelineModel::findParentTrackOfClip(ClipModel *clip) const {
     if(!clip){
-        qDebug("how clip not here???");
+        qDebug("Clip not in Model");
     }
     if(!clip->Parent())
-        qDebug("how its not here??? %i",0);
+        qDebug("Clip HAS NO PARENT?! %i",0);
     for (TrackModel* track : m_tracks) {
         if(std::find(track->getClips().cbegin(),track->getClips().cend(),clip)!=track->getClips().cend()){
 
@@ -61,7 +61,6 @@ TrackModel *TimelineModel::findParentTrackOfClip(ClipModel *clip) const {
 }
 
 int TimelineModel::findTrackRow(TrackModel *track) const {
-    // Assuming yourTracksList is a QList<Track*>
     auto it = std::find(m_tracks.begin(),m_tracks.end(),track);
 
     return it-m_tracks.begin();
@@ -76,40 +75,6 @@ int TimelineModel::findClipRow(TrackModel *track, ClipModel *clip) const{
 
 QModelIndex TimelineModel::index(int row, int column, const QModelIndex &parent) const
 {
-
-    /*
-    // Check if the index is valid within the model.
-    if (!hasIndex(row, column, parent)) {
-        return QModelIndex();
-    }
-
-    // If the parent is invalid, we are at the top level.
-    // Assuming you want to treat top level differently, i.e., returning tracks.
-    if (!parent.isValid()) {
-        // Make sure the row number is valid for the tracks container.
-        if (row >= 0 && row < m_tracks.size()) {
-            TrackModel* track = m_tracks.at(row);
-            // Use nullptr or a specific identifier as the third parameter if tracks don't have a parent.
-            return createIndex(row, column, track); // Assuming tracks are at the top level.
-        } else {
-            return QModelIndex(); // Invalid row for tracks.
-        }
-    }
-
-    // Below this point, we deal with children of tracks, presumably clips.
-    if (row >= 0 && parent.row() < m_tracks.size()) {
-        TrackModel* track = m_tracks.at(parent.row());
-        const auto& clips = track->getClips(); // Store the result to avoid multiple calls.
-        if (row < clips.size()) {
-            ClipModel* clip = clips.at(row);
-            return createIndex(row, column, clip);
-        }
-    }
-
-    // Return an invalid QModelIndex if we can't match the conditions above.
-    return QModelIndex();
-*/
-
 
     //not in model
     if (hasIndex(row, column, parent)==false) {
@@ -147,7 +112,7 @@ QModelIndex TimelineModel::index(int row, int column, const QModelIndex &parent)
         //row = findClipRow(track,clip);
         return createIndex(row, column, quintptr(clipID));
     }
-    qDebug("CANT MAKE CLIPZ INDEX");
+    qDebug("CANT MAKE CLIP INDEX");
 
     return QModelIndex();
 }
