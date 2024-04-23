@@ -21,6 +21,11 @@ int main(int argc, char *argv[])
     model->createTrack();
     model->createTrack();
     model->createTrack();
+
+    model->createTrack();
+    model->createTrack();
+    model->createTrack();
+
     // track post in out
     model->addClip(0,1,0,30);
     model->addClip(1,20,0,30);
@@ -29,6 +34,16 @@ int main(int argc, char *argv[])
     model->addClip(2,5,0,30);
     model->addClip(2,40,0,25);
     model->addClip(2,80,0,20);
+
+    model->addClip(3,70,0,30);
+    model->addClip(5,60,0,30);
+    model->addClip(5,100,0,30);
+
+    model->addClip(4,80,0,30);
+    model->addClip(4,130,0,25);
+    model->addClip(4,165,0,50);
+
+
     //model->add(0);
     TimelineView* view = new TimelineView();
     view->resize(880,230);

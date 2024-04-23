@@ -5,7 +5,7 @@
 #include <QPaintEvent>
 #include <QPainter>
 #include <QScrollBar>
-#include "TimelineModel.h"
+#include "timelinemodel.h"
 
 int trackHeight = 25;
 int rulerHeight = 40;
@@ -39,15 +39,35 @@ void TimelineView::paintEvent(QPaintEvent *event)
     painter.save();
     painter.setBrush(QBrush(bgColour));
     painter.drawRect(event->rect());
-    painter.setPen(rulerColour);
 
-    //draw ruler
+    painter.restore();
+    painter.save();
 
-    static int jump = 1;
-    if(  baseTimeScale%timescale == 0){
-        jump =  baseTimeScale/timescale;
+    //draw tracks
+    for (int i = 0; i < model()->rowCount(); ++i){
+
+        int trackSplitter = i * trackHeight + rulerHeight -  m_scrollOffset.y();
+
+        painter.setPen(seperatorColour);
+        painter.fillRect(QRect(0,(i * trackHeight)+ rulerHeight -m_scrollOffset.y(),
+                               trackwidth,trackHeight),
+                         fillColour);
+
+        painter.drawLine(0, trackSplitter, event->rect().width(), trackSplitter);
+
+
+
     }
 
+    painter.restore();
+    painter.save();
+
+    QPen pen(seperatorColour);
+    painter.setPen(pen);
+
+    int lineheight = model()->rowCount() * trackHeight + rulerHeight;
+
+    // draws the vertical lines
 
     int frameStep;
 
@@ -61,11 +81,54 @@ void TimelineView::paintEvent(QPaintEvent *event)
         frameStep = 25; // Draw text every 25 frames
     }
 
+
     int startMarker = static_cast<int>(pointToFrame(m_scrollOffset.x()))*timescale +1;
     int endMarker = event->rect().width() + m_scrollOffset.x();
     startMarker = pointToFrame(startMarker);
     startMarker-= (startMarker%frameStep);
     startMarker = frameToPoint(startMarker);
+
+    for (int i = startMarker; i<endMarker; i += timescale*frameStep)
+    {
+        painter.drawLine(i - m_scrollOffset.x(), std::max(rulerHeight, event->rect().top()),
+                         i - m_scrollOffset.x(), lineheight);
+    }
+    painter.restore();
+
+    painter.save();
+
+    //draw clips
+    QStyleOptionViewItem option;
+    QAbstractItemView::initViewItemOption(&option);
+    for(int i=0;i<model()->rowCount();i++){
+        QModelIndex trackIndex = model()->index(i, 0);
+
+        for(int j = 0; j<model()->rowCount(trackIndex);j++){
+            QModelIndex clipIndex = model()->index(j,0,trackIndex);
+            option.rect = visualRect(clipIndex);
+            painter.save();
+            clipDelegate.paint(&painter,option,clipIndex);
+            painter.restore();
+        }
+    }
+    painter.restore();
+    painter.save();
+
+    //draw ruler
+
+    painter.setBrush(QBrush(bgColour));
+    painter.drawRect(m_scrollOffset.x(),0,event->rect().width(),rulerHeight);
+
+    painter.setPen(rulerColour);
+
+
+    static int jump = 1;
+    if(  baseTimeScale%timescale == 0){
+        jump =  baseTimeScale/timescale;
+    }
+
+
+
 
     for(int i = startMarker;i < endMarker; i+=timescale*frameStep){
 
@@ -141,55 +204,7 @@ void TimelineView::paintEvent(QPaintEvent *event)
     }
 
     painter.restore();
-    painter.save();
 
-    //draw tracks
-    for (int i = 0; i < model()->rowCount(); ++i){
-
-        int trackSplitter = i * trackHeight + rulerHeight;
-
-        painter.setPen(seperatorColour);
-        painter.fillRect(QRect(0,(i * trackHeight)+ rulerHeight,
-                               trackwidth,trackHeight),
-                         fillColour);
-
-        painter.drawLine(0, trackSplitter, event->rect().width(), trackSplitter);
-
-
-
-    }
-
-    painter.restore();
-    painter.save();
-
-    QPen pen(seperatorColour);
-    painter.setPen(pen);
-
-    int lineheight = model()->rowCount() * trackHeight + rulerHeight;
-
-    // draws the vertical lines
-
-    for (int i = startMarker; i<endMarker; i += timescale*frameStep)
-    {
-        painter.drawLine(i - m_scrollOffset.x(), std::max(rulerHeight, event->rect().top()),
-                         i - m_scrollOffset.x(), lineheight);
-    }
-    painter.restore();
-
-    //draw clips
-    QStyleOptionViewItem option;
-    QAbstractItemView::initViewItemOption(&option);
-    for(int i=0;i<model()->rowCount();i++){
-        QModelIndex trackIndex = model()->index(i, 0);
-
-        for(int j = 0; j<model()->rowCount(trackIndex);j++){
-            QModelIndex clipIndex = model()->index(j,0,trackIndex);
-            option.rect = visualRect(clipIndex);
-            painter.save();
-            clipDelegate.paint(&painter,option,clipIndex);
-            painter.restore();
-        }
-    }
 }
 
 
@@ -212,8 +227,16 @@ void TimelineView::updateScrollBars()
 
 QModelIndex TimelineView::indexAt(const QPoint &point) const{ //Currently only works with tracks change when you add clips
 
+
     QModelIndex index;
     QModelIndex parent;
+
+    QRect rullerRect(m_scrollOffset.x(),0,viewport()->width(),rulerHeight);
+
+    if(rullerRect.contains(point)){
+            qDebug()<< "Clicked ruller: ";
+        return index;}
+
 
     int columnIndex = model()->columnCount()-1;
     for(int i = 0; i < model()->rowCount(); i++){
@@ -225,7 +248,7 @@ QModelIndex TimelineView::indexAt(const QPoint &point) const{ //Currently only w
         }
     }
     qDebug()<< "Clicked Track: " << -1;
-    return QModelIndex();
+    return index;
 }
 
 QRect TimelineView::itemRect(const QModelIndex &index) const
