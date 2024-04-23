@@ -26,6 +26,11 @@ TimelineView::TimelineView()
     verticalScrollBar()->setPageStep(trackHeight * 5);
     viewport()->setMinimumHeight(trackHeight + rulerHeight);
     setMinimumHeight(trackHeight + rulerHeight);
+    setSelectionMode(SingleSelection);
+    setSelectionBehavior(SelectItems);
+    setAutoScroll(true);
+    setAutoScrollMargin(5);
+
 
 
 }
@@ -105,6 +110,12 @@ void TimelineView::paintEvent(QPaintEvent *event)
 
         for(int j = 0; j<model()->rowCount(trackIndex);j++){
             QModelIndex clipIndex = model()->index(j,0,trackIndex);
+            if(selectionModel()->isSelected(clipIndex)){
+                qDebug()<<"clips is selected";
+                option.state |= QStyle::State_Selected;
+            }else{
+                option.state &= ~QStyle::State_Selected;
+            }
             option.rect = visualRect(clipIndex);
             painter.save();
             clipDelegate.paint(&painter,option,clipIndex);
@@ -117,7 +128,7 @@ void TimelineView::paintEvent(QPaintEvent *event)
     //draw ruler
 
     painter.setBrush(QBrush(bgColour));
-    painter.drawRect(m_scrollOffset.x(),0,event->rect().width(),rulerHeight);
+    painter.drawRect(-m_scrollOffset.x(),0,event->rect().width() + m_scrollOffset.x(),rulerHeight);
 
     painter.setPen(rulerColour);
 
@@ -207,6 +218,13 @@ void TimelineView::paintEvent(QPaintEvent *event)
 
 }
 
+void TimelineView::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
+{
+    qDebug()<<"Selection Changed";
+    QAbstractItemView::selectionChanged(selected,deselected);
+    viewport()->update();
+}
+
 
 void TimelineView::updateScrollBars()
 {
@@ -225,13 +243,13 @@ void TimelineView::updateScrollBars()
 
 
 
-QModelIndex TimelineView::indexAt(const QPoint &point) const{ //Currently only works with tracks change when you add clips
+QModelIndex TimelineView::indexAt(const QPoint &point) const{
 
 
     QModelIndex index;
     QModelIndex parent;
 
-    QRect rullerRect(m_scrollOffset.x(),0,viewport()->width(),rulerHeight);
+    QRect rullerRect(-m_scrollOffset.x(),0,viewport()->width() + m_scrollOffset.x(),rulerHeight);
 
     if(rullerRect.contains(point)){
             qDebug()<< "Clicked ruller: ";
@@ -240,9 +258,21 @@ QModelIndex TimelineView::indexAt(const QPoint &point) const{ //Currently only w
 
     int columnIndex = model()->columnCount()-1;
     for(int i = 0; i < model()->rowCount(); i++){
+
         if (visualRect(model()->index(i, columnIndex,parent)).contains(point))
         {
             index = model()->index(i,columnIndex,parent);
+            parent = index;
+
+            for(int j=0; j<model()->rowCount(index); j++){
+
+                if(visualRect(model()->index(j, columnIndex,index)).contains(point)){
+                    return model()->index(j,columnIndex,index);
+                    //return index;
+                }
+
+            }
+
             qDebug()<< "Clicked Track: " << i;
             return index;
         }
@@ -305,16 +335,47 @@ void TimelineView::setScale(double value)
     viewport()->update();
 }
 
+void TimelineView::setModel(QAbstractItemModel *model)
+{
+
+
+    //QItemSelectionModel* oldSelectionModel = selectionModel();
+   // delete oldSelectionModel;
+   // oldSelectionModel = nullptr;
+
+    QAbstractItemView::setModel(model);
+
+    //QItemSelectionModel* selectionModel = new QItemSelectionModel(model);
+
+    //setSelectionModel(selectionModel);
+
+
+}
+
 
 void TimelineView::mousePressEvent(QMouseEvent *event)
 {
-    //indexAt(event->pos());
+
     QAbstractItemView::mousePressEvent(event);
 }
 
 void TimelineView::mouseMoveEvent(QMouseEvent *event)
 {
     QAbstractItemView::mouseMoveEvent(event);
+}
+
+void TimelineView::mouseReleaseEvent(QMouseEvent *event)
+{
+    QModelIndex item = indexAt(event->pos());
+    selectionModel()->clearSelection();
+
+    //item pressed was a clip
+    if(item.parent().isValid()){
+        selectionModel()->select(item,QItemSelectionModel::Select);
+    }
+
+    //pressed outside of selection
+    QAbstractItemView::mouseReleaseEvent(event);
 }
 
 int TimelineView::horizontalOffset() const{return 0;}

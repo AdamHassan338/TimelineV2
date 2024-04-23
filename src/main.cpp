@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     view->setModel(model);
     view->show();
 
-    QToolBar* toolbar = new QToolBar("zoom slider");
+    QToolBar* toolbar = new QToolBar("zoom slider",view);
     QSlider* slider = new QSlider(Qt::Horizontal);
     slider->setRange(2, 50);
     slider->setValue(5);

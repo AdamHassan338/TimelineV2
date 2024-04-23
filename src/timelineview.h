@@ -31,7 +31,7 @@ public slots:
 
     // QAbstractItemView interface
 public:
-
+    void setModel(QAbstractItemModel *model) override;
     QRect visualRect(const QModelIndex &index) const override;
     void scrollTo(const QModelIndex &index, ScrollHint hint) override{};
     QModelIndex indexAt(const QPoint &point) const override;;
@@ -47,6 +47,10 @@ protected:
 
     void paintEvent(QPaintEvent *event) override;
 
+
+protected slots:
+    void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected) override;
+
     // QAbstractScrollArea interface
 protected:
     void scrollContentsBy(int dx, int dy) override;
@@ -55,9 +59,19 @@ protected:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event);
 
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
+
+
+
+    // QAbstractItemView interface
+public:
+
+
+    // QWidget interface
+protected:
 
 };
 

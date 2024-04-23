@@ -2,6 +2,8 @@
 
 #include "clipmodel.h"
 #include "trackmodel.h"
+#include <stdlib.h>
+#include <string>
 TimelineModel::TimelineModel()
 {
 
@@ -208,7 +210,12 @@ QVariant TimelineModel::data(const QModelIndex &index, int role) const
     //    return QVariant();
 
     if(!index.parent().isValid()){
-        return "track";
+        TrackModel* track;
+        if(role==Qt::ToolTipRole){
+            track = (TrackModel*)FromID(index.internalId());
+            return QVariant::fromValue("track " + QString::number(index.row()));
+        }
+        return QVariant();
     }
     ClipModel* clip;
     switch (role){
