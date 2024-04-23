@@ -6,11 +6,22 @@ class TrackModel;
 class ClipModel
 {
 public:
-    ClipModel(int pos,TrackModel* parent);
+    ClipModel(int pos,int in, int out,TrackModel* parent);
 
     TrackModel* Parent(){
         return m_parent;
     };
+
+
+
+    int pos() const;
+    void setPos(int newPos);
+
+    void setParent(TrackModel *newParent);
+    int in() const;
+    void setIn(int newIn);
+    int out() const;
+    void setOut(int newOut);
 
 private:
     TrackModel* m_parent;

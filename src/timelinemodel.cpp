@@ -7,12 +7,11 @@ TimelineModel::TimelineModel()
 
 }
 
-void TimelineModel::addClip(int trackIndex)
+void TimelineModel::addClip(int trackIndex, int pos, int in, int out)
 {
 
     TrackModel* track = m_tracks.at(trackIndex);
     if (!track) {
-        // Further validation if necessary, depending on your application's logic.
         return;
     }
 
@@ -20,7 +19,7 @@ void TimelineModel::addClip(int trackIndex)
     int rows = rowCount(parentIndex);
 
 
-    ClipModel* clip = new ClipModel(0,track);
+    ClipModel* clip = new ClipModel(pos,in,out,track);
 
     beginInsertRows(parentIndex,rows,rows);
     m_clips.push_back(clip);
@@ -28,6 +27,12 @@ void TimelineModel::addClip(int trackIndex)
     quint64 id = assignIdToClip(clip);
 
     endInsertRows();
+    int lengths = out-in + pos;
+    if(out-in + pos > m_length){
+        m_length = out-in + pos;
+    }
+
+    return;
 
 }
 
@@ -92,14 +97,12 @@ QModelIndex TimelineModel::index(int row, int column, const QModelIndex &parent)
 
             return createIndex(row, column,  quintptr(trackID));
         }
-            //return createIndex(row,column)
-            //return createIndex(row,column, track);
+
         qDebug("TimelineModel::index - could not make track at row: %i",row);
         return QModelIndex();
     }
 
     track = m_tracks.at(parent.row());
-    //track = static_cast<TrackModel*>(parent.internalPointer());
     if(!track){
         qDebug()<<"NOT VALID";
         return QModelIndex();
@@ -109,7 +112,6 @@ QModelIndex TimelineModel::index(int row, int column, const QModelIndex &parent)
 
     if(clip){
         quint64 clipID = findID(clip);
-        //row = findClipRow(track,clip);
         return createIndex(row, column, quintptr(clipID));
     }
     qDebug("CANT MAKE CLIP INDEX");
@@ -120,12 +122,6 @@ QModelIndex TimelineModel::index(int row, int column, const QModelIndex &parent)
 QModelIndex TimelineModel::parent(const QModelIndex &child) const
 {
     if (!child.isValid()) return {QModelIndex()};
-
-    //QModelIndex().internalId();
-
-
-
-    //ClipModel* clip = static_cast<ClipModel*>(child.internalPointer());
 
     quint64 id = child.internalId();
 
@@ -149,7 +145,7 @@ QModelIndex TimelineModel::parent(const QModelIndex &child) const
 
 
         //Q_ASSERT(parentItem);
-        qDebug("number clips on track %i : %zu", findTrackRow(track),track->getClips().size());
+        //qDebug("number clips on track %i : %zu", findTrackRow(track),track->getClips().size());
         return createIndex(findTrackRow(track), 0,quintptr(findID(track)));
     }
 
@@ -175,13 +171,11 @@ int TimelineModel::rowCount(const QModelIndex &parent) const
     quint64 id = parent.internalId();
 
     if(isTrack(id)){
-        track = (TrackModel*)FromID(id);//static_cast<TrackModel*>(parent.internalPointer());
+        track = (TrackModel*)FromID(id);
         if(!track){
             qDebug("NOT A TRAZK");
             return 1;
         }
-
-        //track = m_tracks.at(parent.row());
 
         return track->getClips().size();
     }
@@ -191,8 +185,6 @@ int TimelineModel::rowCount(const QModelIndex &parent) const
     }
 
 
-
-    //Q_UNUSED(parent);
     return 1;
 
 }
@@ -205,29 +197,52 @@ int TimelineModel::columnCount(const QModelIndex &parent) const
 
 QVariant TimelineModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid())
+    if (!index.isValid()){
+        if(role==TimelineLengthRole)
+            return QVariant::fromValue(m_length);
         return QVariant();
+    }
 
-    if (role != Qt::DisplayRole)
-        return QVariant();
+
+    //if (role != Qt::DisplayRole)
+    //    return QVariant();
 
     if(!index.parent().isValid()){
         return "track";
     }
-    return "clip";
+    ClipModel* clip;
+    switch (role){
+    case ClipInRole:
+        clip = (ClipModel*)FromID(index.internalId());
+        return QVariant::fromValue(clip->in());
+        break;
+    case ClipOutRole:
+        clip = (ClipModel*)FromID(index.internalId());
+        return QVariant::fromValue(clip->out());
+        break;
+    case ClipPosRole:
+        clip = (ClipModel*)FromID(index.internalId());
+        return QVariant::fromValue(clip->pos());
+        break;
+    defualt:
+        return "clip";
+    }
+    return "null";
 }
 
 
-/*QHash<int, QByteArray> TimelineModel::roleNames() const
+QHash<int, QByteArray> TimelineModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
-    roles[NameRole] = "name";
-    roles[DurationRole] = "duration";
+    roles[ClipInRole] = "clipIn";
+    roles[ClipOutRole] = "clipOut";
+    roles[ClipPosRole] = "clipPos";
     roles[TrackNumberRole] = "trackNumber";
     roles[SelectedRole] = "selected";
     roles[InRole] = "in";
     roles[OutRole] = "out";
+    roles[TimelineLengthRole] = "timelineLength";
 
 
     return roles;
-}*/
+}

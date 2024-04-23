@@ -21,13 +21,14 @@ int main(int argc, char *argv[])
     model->createTrack();
     model->createTrack();
     model->createTrack();
-    model->addClip(0);
-    model->addClip(1);
-    model->addClip(1);
+    // track post in out
+    model->addClip(0,1,0,30);
+    model->addClip(1,20,0,30);
+    model->addClip(1,50,0,30);
 
-    model->addClip(2);
-    model->addClip(2);
-    model->addClip(2);
+    model->addClip(2,5,0,30);
+    model->addClip(2,40,0,25);
+    model->addClip(2,80,0,20);
     //model->add(0);
     TimelineView* view = new TimelineView();
     view->resize(880,230);
@@ -39,8 +40,8 @@ int main(int argc, char *argv[])
 
     QToolBar* toolbar = new QToolBar("zoom slider");
     QSlider* slider = new QSlider(Qt::Horizontal);
-    slider->setRange(1, 50);
-    slider->setValue(50);
+    slider->setRange(2, 50);
+    slider->setValue(5);
     toolbar->addWidget(slider);
     toolbar->show();
 

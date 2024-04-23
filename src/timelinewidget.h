@@ -3,7 +3,6 @@
 
 #include <QFrame>
 
-class TrackView;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class TimelineWidget; }

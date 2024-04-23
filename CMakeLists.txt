@@ -23,14 +23,14 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(TimelineV2
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        src/trackview.h src/trackview.cpp
-        src/clipview.h src/clipview.cpp
+
+
         src/timelinemodel.h src/timelinemodel.cpp
         src/trackmodel.h src/trackmodel.cpp
-        src/timelinedelegate.h src/timelinedelegate.cpp
         src/clipmodel.h src/clipmodel.cpp
         src/sequencemodel.h src/sequencemodel.cpp
         src/timelineview.h src/timelineview.cpp
+        src/clipdelegate.h src/clipdelegate.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET TimelineV2 APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

@@ -2,7 +2,7 @@
 #define TIMELINEVIEW_H
 
 #include <QAbstractItemView>
-
+#include "clipdelegate.h"
 
 
 class TimelineView : public QAbstractItemView
@@ -17,20 +17,16 @@ private:
 
     QPoint m_scrollOffset;
     double m_scale = 1;
-    int timescale = 50;
-    int trackwidth = 50*timescale;
-    int pointToFrame(int point);
+    int timescale = 5;
+    int trackwidth;//50*timescale;
+    int pointToFrame(int point) const;
+    int frameToPoint(int frame) const;
+    ClipDelegate clipDelegate;
+
+
+    int getTrackWdith() const;
 public slots:
-    void setScale(double value)
-    {
-        //m_scale = (double)value/(double)10;
-        //50
-        //1
-        timescale=value;//m_scale;
-        trackwidth = 50*timescale;
-        updateScrollBars();
-        viewport()->update();
-    }
+    void setScale(double value);
 
 
     // QAbstractItemView interface
@@ -62,6 +58,7 @@ protected:
 
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
+
 };
 
 #endif // TIMELINEVIEW_H

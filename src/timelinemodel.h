@@ -13,13 +13,19 @@ public:
     TimelineModel();
 
     //void addTrack(int x);
-    void addClip(int track);
+    void addClip(int trackIndex, int pos, int in, int out);
     std::vector<TrackModel*> m_tracks;
     std::vector<ClipModel*> m_clips;
 
     void createTrack();
+    void* FromID(quint64 id) const{
+        return m_idToObjectMap.at(id);
+    }
 
 private:
+    //length of the timeline, grows automaticly with clips
+    int m_length = 0;
+
     enum ItemType {
         Track,
         Clip,
@@ -58,9 +64,7 @@ private:
         return quint64(0);
     };
 
-    void* FromID(quint64 id) const{
-        return m_idToObjectMap.at(id);
-    }
+
 
     bool isClip(quint64 id) const{
         return getType(id)==Clip;
@@ -102,13 +106,15 @@ public:
     QVariant data(const QModelIndex &index, int role) const override;
     //bool insertRows(int row, int count, const QModelIndex &parent) override;
 
-    //QHash<int, QByteArray> roleNames() const override;
+    QHash<int, QByteArray> roleNames() const override;
 
-    enum SurahRoles {
+    enum TimelineRoles {
         NameRole = Qt::UserRole + 1,
-        StartTimeRole,
-        DurationRole,
+        ClipInRole,
+        ClipOutRole,
+        ClipPosRole,
         TrackNumberRole,
+        TimelineLengthRole,
         SelectedRole,
         InRole,
         OutRole
