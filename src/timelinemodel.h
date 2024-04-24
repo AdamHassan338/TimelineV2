@@ -35,7 +35,7 @@ signals:
 private:
     //length of the timeline, grows automaticly with clips
     int m_length = 0;
-    int playheadPos = 5;
+    int playheadPos = 0;
 
     enum ItemType {
         Track,

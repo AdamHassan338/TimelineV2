@@ -50,7 +50,9 @@ void ClipDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
 
         painter->restore();
     }else{
-        painter->fillRect(option.rect,QBrush(clipColour));
+        painter->setPen(clipColour.darker(300));
+        painter->setBrush(QBrush(clipColour));
+        painter->drawRect(option.rect);
     }
 
     QString text("Video.mp4");
@@ -68,11 +70,11 @@ void ClipDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
 
     QPoint points[6] = {
         option.rect.topLeft(),
-        QPoint(option.rect.left() + 10,option.rect.top()),
-        QPoint(option.rect.left(),option.rect.top()+10),
+        QPoint(option.rect.left() + 5,option.rect.top()),
+        QPoint(option.rect.left(),option.rect.top()+5),
         QPoint(option.rect.topRight().x()+1,option.rect.topRight().y()),
-        QPoint(option.rect.right()+1 - 10,option.rect.top()),
-        QPoint(option.rect.right()+1,option.rect.top()+10),
+        QPoint(option.rect.right()+1 - 5,option.rect.top()),
+        QPoint(option.rect.right()+1,option.rect.top()+5),
     };
 
     if(option.state &~ QStyle::State_Selected){
