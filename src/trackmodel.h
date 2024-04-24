@@ -13,9 +13,10 @@ public:
     TrackModel() = default;
 
     void addClip(ClipModel* clip);
+    void removeClip(ClipModel* clip);
     int m_number;
 
-    const std::vector<ClipModel*>& getClips(){return m_clips;};
+    const std::vector<ClipModel*>& getClips(){return m_clips;}
 
 private:
 

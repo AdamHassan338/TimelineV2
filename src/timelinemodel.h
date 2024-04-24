@@ -3,6 +3,7 @@
 
 #include <QAbstractItemModel>
 #include <unordered_set>
+#include <unordered_map>
 
 class TrackModel;
 class ClipModel;
@@ -14,6 +15,9 @@ public:
 
     //void addTrack(int x);
     void addClip(int trackIndex, int pos, int in, int out);
+    void moveClipToTrack(QModelIndex clipIndex,QModelIndex newTrackIndex);
+    //re calcualtes the length of timeline in frames
+    void reCalculateLength();
     std::vector<TrackModel*> m_tracks;
     std::vector<ClipModel*> m_clips;
 
@@ -21,6 +25,8 @@ public:
     void* FromID(quint64 id) const{
         return m_idToObjectMap.at(id);
     }
+    //function for creating fake index, used when creating a new track. one that isnt QModelIndex() but is still invalid
+    QModelIndex createFakeIndex();
 
 private:
     //length of the timeline, grows automaticly with clips
@@ -94,6 +100,9 @@ private:
 
         return Invalid;
     }
+
+
+
 
 
     // QAbstractItemModel interface

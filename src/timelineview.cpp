@@ -111,7 +111,7 @@ void TimelineView::paintEvent(QPaintEvent *event)
         for(int j = 0; j<model()->rowCount(trackIndex);j++){
             QModelIndex clipIndex = model()->index(j,0,trackIndex);
             if(selectionModel()->isSelected(clipIndex)){
-                qDebug()<<"clips is selected";
+                //qDebug()<<"clips is selected";
                 option.state |= QStyle::State_Selected;
             }else{
                 option.state &= ~QStyle::State_Selected;
@@ -250,7 +250,8 @@ QModelIndex TimelineView::indexAt(const QPoint &point) const{
     QModelIndex parent;
 
     QRect rullerRect(-m_scrollOffset.x(),0,viewport()->width() + m_scrollOffset.x(),rulerHeight);
-
+    if(point.y()<0)//if above the ruler
+        return index;
     if(rullerRect.contains(point)){
             qDebug()<< "Clicked ruller: ";
         return index;}
@@ -278,12 +279,16 @@ QModelIndex TimelineView::indexAt(const QPoint &point) const{
         }
     }
     qDebug()<< "Clicked Track: " << -1;
+    index = ((TimelineModel*)model())->createFakeIndex();
+    if(!index.isValid()){
+        qDebug()<<"dont worry still invalid";
+    }
     return index;
 }
 
 QRect TimelineView::itemRect(const QModelIndex &index) const
 {
-    int trackwidth = getTrackWdith();
+    int trackwidth = getTrackWdith() + 500;//500 is for extra width outside of current timeline length;
     //if track
     if(index.parent()==QModelIndex()){
         return QRect(0, (index.row() * trackHeight) + rulerHeight, trackwidth, trackHeight);
@@ -412,12 +417,11 @@ void TimelineView::mouseMoveEvent(QMouseEvent *event)
 {
     if(mouseHeld){
         m_mouseEnd = event->pos();
-        QModelIndexList list = selectionModel()->selectedIndexes();
-        for(QModelIndex& index : list ){
-            model()->setData(index,pointToFrame(m_mouseEnd.x()+m_mouseOffset.x()),TimelineModel::ClipPosRole);
+        if(!selectionModel()->selectedIndexes().isEmpty()){
+            moveSelectedClip(pointToFrame(m_mouseEnd.x()+m_mouseOffset.x()),m_mouseEnd.y()+m_mouseOffset.y());
             viewport()->update();
-            qDebug() << model()->data(index,TimelineModel::ClipPosRole);
         }
+
     }
     QAbstractItemView::mouseMoveEvent(event);
 }
@@ -439,12 +443,18 @@ void TimelineView::keyPressEvent(QKeyEvent *event)
 
     switch (event->key()){
     case Qt::Key_Right:
-        model()->setData(list[0],model()->data(list[0],TimelineModel::ClipPosRole).toInt() + 1,TimelineModel::ClipPosRole);
+        moveSelectedClip(1,0,false);
         viewport()->update();
         break;
     case Qt::Key_Left:
-        model()->setData(list[0],model()->data(list[0],TimelineModel::ClipPosRole).toInt() - 1,TimelineModel::ClipPosRole);
+        moveSelectedClip(-1,0,false);
         viewport()->update();
+        break;
+    case Qt::Key_Down :
+        moveSelectedClip(0,1,false);
+        break;
+    case Qt::Key_Up:
+        moveSelectedClip(0,-1,false);
         break;
     defualt:
         break;
@@ -475,5 +485,42 @@ void TimelineView::showEvent(QShowEvent *event)
     updateScrollBars();
     QAbstractItemView::showEvent(event);
 }
+
+void TimelineView::moveSelectedClip(int dx, int dy, bool isMouse)
+{
+    QModelIndexList list = selectionModel()->selectedIndexes();
+    int newPos;
+    if(isMouse){
+        newPos = dx;
+    }else{
+        newPos = model()->data(list[0],TimelineModel::ClipPosRole).toInt() + dx;
+    }
+    for(QModelIndex& clipIndex:list){
+
+        model()->setData(list[0],newPos,TimelineModel::ClipPosRole);
+
+    }
+
+
+    if(isMouse && indexAt(m_mouseEnd)!=list[0].parent()){
+        ((TimelineModel*)model())->moveClipToTrack(list[0],indexAt(m_mouseEnd));
+    }
+
+    if(dy!=0){
+        QModelIndex nextTrack;
+        if( dy>0 && list[0].parent().row()==model()->rowCount()-1){
+            nextTrack = ((TimelineModel*)model())->createFakeIndex();
+        }else{
+            nextTrack = list[0].parent().siblingAtRow(list[0].parent().row()+dy);
+        }
+        ((TimelineModel*)model())->moveClipToTrack(list[0],nextTrack);
+    }
+
+    ((TimelineModel*)model())->reCalculateLength();
+    updateScrollBars();
+
+
+}
+
 
 

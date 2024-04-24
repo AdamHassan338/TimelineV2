@@ -29,19 +29,73 @@ void TimelineModel::addClip(int trackIndex, int pos, int in, int out)
     quint64 id = assignIdToClip(clip);
 
     endInsertRows();
-    int lengths = out-in + pos;
-    if(out-in + pos > m_length){
-        m_length = out-in + pos;
-    }
+
+    reCalculateLength();
+
 
     return;
+
+}
+
+void TimelineModel::moveClipToTrack(QModelIndex clipIndex, QModelIndex newTrackIndex)
+{
+    if(!clipIndex.isValid()){
+        qDebug()<<"invalid clipindex when moving clip to track";
+        return;
+    }
+    const QModelIndex parentTrackIndex = clipIndex.parent();
+
+    if(!parentTrackIndex.isValid()){
+        qDebug()<<"invalid parentTrackIndex when moving clip to track";
+        return;
+    }
+
+    if(!newTrackIndex.isValid() ){
+        return;
+
+    }
+
+    //if index is of a clip
+    if(newTrackIndex.parent().isValid()){
+        return;
+    }
+
+    //index is for a new track
+    if(!hasIndex(newTrackIndex.row(),newTrackIndex.column(),newTrackIndex.parent())){
+        if(newTrackIndex!=QModelIndex()){
+            createTrack();
+            int x = rowCount(QModelIndex());
+            newTrackIndex = index(rowCount(QModelIndex())-1,columnCount(QModelIndex())-1,QModelIndex());
+        }
+    }
+
+
+
+    TrackModel* parentTrack = (TrackModel*)FromID(parentTrackIndex.internalId());
+    ClipModel* clip = (ClipModel*)FromID(clipIndex.internalId());
+    TrackModel* newTrack = (TrackModel*)FromID(newTrackIndex.internalId());
+
+    beginMoveRows(parentTrackIndex,clipIndex.row(),clipIndex.row(),newTrackIndex,rowCount(newTrackIndex));
+
+    parentTrack->removeClip(clip);
+    newTrack->addClip(clip);
+
+    endMoveRows();
+
+
+}
+
+void TimelineModel::reCalculateLength()
+{
+    for(const ClipModel* clip : m_clips){
+        m_length =  std::max(m_length,clip->out() - clip->in() + clip->pos());
+    }
 
 }
 
 void TimelineModel::createTrack()
 {
     int rows = rowCount(QModelIndex());
-    //
 
     TrackModel* track = new TrackModel(rowCount(QModelIndex()));
 
@@ -78,6 +132,12 @@ int TimelineModel::findClipRow(TrackModel *track, ClipModel *clip) const{
     auto it = std::find(clips.begin(),clips.end(),clip);
     qDebug()<<it-clips.begin();
     return it-clips.begin();
+}
+
+QModelIndex TimelineModel::createFakeIndex()
+{
+    return createIndex(rowCount(QModelIndex()),columnCount(QModelIndex()),nullptr);
+
 }
 
 QModelIndex TimelineModel::index(int row, int column, const QModelIndex &parent) const

@@ -72,18 +72,8 @@ protected:
     void showEvent(QShowEvent *event) override;
 
 
-
-    // QAbstractItemView interface
-public:
-
-
-    // QWidget interface
-protected:
-
-
-    // QWidget interface
-protected:
-
+    //this function moves clips by frame, not viewport pixels
+    void moveSelectedClip(int dx, int dy,bool isMouse = true);
 };
 
 #endif // TIMELINEVIEW_H
