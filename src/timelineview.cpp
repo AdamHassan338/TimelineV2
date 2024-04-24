@@ -429,7 +429,7 @@ void TimelineView::mousePressEvent(QMouseEvent *event)
 selectionModel()->clearSelection();
 
     int playheadPos = frameToPoint(((TimelineModel*)model())->getPlayheadPos());
-    QRect playheadHitBox(QPoint(playheadPos,rulerHeight),QPoint(playheadPos+3,viewport()->height()));
+    QRect playheadHitBox(QPoint(playheadPos-3,rulerHeight),QPoint(playheadPos+2,viewport()->height()));
     QRect playheadHitBox2(QPoint(playheadPos-playheadwidth,-playheadheight + rulerHeight),QPoint(playheadPos+playheadwidth,rulerHeight));
 
     if(playheadHitBox.contains(m_mouseStart)||playheadHitBox2.contains(m_mouseStart)){
@@ -446,13 +446,14 @@ selectionModel()->clearSelection();
             selectionModel()->select(item,QItemSelectionModel::Select);
             m_mouseOffset.setX(frameToPoint(model()->data(item,TimelineModel::ClipPosRole).toInt()) - m_mouseStart.x());
         }
+        if(selectionModel()->selectedIndexes().isEmpty()){
+            ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x())));
+            viewport()->update();
+        }
 
     }
 
-    if(selectionModel()->selectedIndexes().isEmpty()){
-        ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x())));
-        viewport()->update();
-    }
+
 
 
     QAbstractItemView::mousePressEvent(event);
@@ -464,6 +465,9 @@ void TimelineView::mouseMoveEvent(QMouseEvent *event)
         m_mouseEnd = event->pos();
         if(!selectionModel()->selectedIndexes().isEmpty()&&m_mouseEnd.x()>=0){
             moveSelectedClip(pointToFrame(m_mouseEnd.x()+m_mouseOffset.x()),m_mouseEnd.y()+m_mouseOffset.y());
+            viewport()->update();
+        }else{
+            ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x())));
             viewport()->update();
         }
 
