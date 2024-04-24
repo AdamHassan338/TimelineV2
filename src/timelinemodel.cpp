@@ -237,6 +237,46 @@ QVariant TimelineModel::data(const QModelIndex &index, int role) const
     return "null";
 }
 
+bool TimelineModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+
+    if (!index.isValid()){
+        return false;
+    }
+
+
+
+    if(!index.parent().isValid()){
+        TrackModel* track;
+        if(role==Qt::ToolTipRole){
+            track = (TrackModel*)FromID(index.internalId());
+        }
+        return true;
+    }
+    ClipModel* clip;
+    switch (role){
+    case ClipInRole:
+        clip = (ClipModel*)FromID(index.internalId());
+        clip->setIn(value.toInt());
+        return true;
+        break;
+    case ClipOutRole:
+        clip = (ClipModel*)FromID(index.internalId());
+        clip->setOut(value.toInt());
+        return true;
+        break;
+    case ClipPosRole:
+        clip = (ClipModel*)FromID(index.internalId());
+        clip->setPos(value.toInt());
+        return true;
+        break;
+    defualt:
+        return false;;
+    }
+
+    return QAbstractItemModel::setData(index,value,role);
+}
+
 
 QHash<int, QByteArray> TimelineModel::roleNames() const
 {

@@ -23,6 +23,11 @@ private:
     int frameToPoint(int frame) const;
     ClipDelegate clipDelegate;
 
+    QPoint m_mouseStart;
+    QPoint m_mouseEnd;
+    QPoint m_mouseOffset;
+    bool mouseHeld;
+
 
     int getTrackWdith() const;
 public slots:
@@ -59,7 +64,9 @@ protected:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
-    void mouseReleaseEvent(QMouseEvent *event);
+    void mouseReleaseEvent(QMouseEvent *event) override;
+
+    void keyPressEvent(QKeyEvent *event) override;
 
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
@@ -68,6 +75,10 @@ protected:
 
     // QAbstractItemView interface
 public:
+
+
+    // QWidget interface
+protected:
 
 
     // QWidget interface

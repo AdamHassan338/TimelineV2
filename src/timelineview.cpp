@@ -328,10 +328,48 @@ int TimelineView::getTrackWdith() const{
     return frameToPoint(model()->data(QModelIndex(),TimelineModel::TimelineLengthRole).toInt());
 }
 
-void TimelineView::setScale(double value)
+void TimelineView::setScale(double value)//late make this scale from point of mouse
 {
+
+    qDebug()<<"value " << value;
+    int left = -m_scrollOffset.x();
+
+    int right = viewport()->width() + m_scrollOffset.x();
+    int total = (left + right) / 2;
+    qDebug() << "old "<<pointToFrame( left ) << " " << pointToFrame(right);
+    //get middpoint
+
+
+    int copy = total;
+    total = pointToFrame(total);
+
+    qDebug() << "mid "<< total;
+
     timescale=value;
+ //updateScrollBars();
+
+    if(0){
+        int newtotal = copy;
+
+
+        newtotal = pointToFrame(newtotal);
+        int diff = frameToPoint(total-newtotal);
+
+        qDebug() << "new mid "<< newtotal << "moved" << pointToFrame(diff);
+
+        qDebug()<<"scroll" << m_scrollOffset.x();
+        if (m_scrollOffset.x() + diff < 0) {
+            qDebug()<<"DOING THE FIX !!!!!!!!!!!!!!!!";
+            diff = -m_scrollOffset.x();
+        }
+        scrollContentsBy(-diff,0);
+        qDebug()<<"newscroll" << m_scrollOffset.x();
+
+
+    }
+
     updateScrollBars();
+
     viewport()->update();
 }
 
@@ -355,27 +393,62 @@ void TimelineView::setModel(QAbstractItemModel *model)
 
 void TimelineView::mousePressEvent(QMouseEvent *event)
 {
+    m_mouseStart = event->pos();
+    mouseHeld = true;
 
-    QAbstractItemView::mousePressEvent(event);
-}
-
-void TimelineView::mouseMoveEvent(QMouseEvent *event)
-{
-    QAbstractItemView::mouseMoveEvent(event);
-}
-
-void TimelineView::mouseReleaseEvent(QMouseEvent *event)
-{
     QModelIndex item = indexAt(event->pos());
     selectionModel()->clearSelection();
 
     //item pressed was a clip
     if(item.parent().isValid()){
         selectionModel()->select(item,QItemSelectionModel::Select);
+        m_mouseOffset.setX(frameToPoint(model()->data(item,TimelineModel::ClipPosRole).toInt()) - m_mouseStart.x());
     }
+
+    QAbstractItemView::mousePressEvent(event);
+}
+
+void TimelineView::mouseMoveEvent(QMouseEvent *event)
+{
+    if(mouseHeld){
+        m_mouseEnd = event->pos();
+        QModelIndexList list = selectionModel()->selectedIndexes();
+        for(QModelIndex& index : list ){
+            model()->setData(index,pointToFrame(m_mouseEnd.x()+m_mouseOffset.x()),TimelineModel::ClipPosRole);
+            viewport()->update();
+            qDebug() << model()->data(index,TimelineModel::ClipPosRole);
+        }
+    }
+    QAbstractItemView::mouseMoveEvent(event);
+}
+
+void TimelineView::mouseReleaseEvent(QMouseEvent *event)
+{
+    mouseHeld = false;
+    m_mouseEnd = event->pos();
+
 
     //pressed outside of selection
     QAbstractItemView::mouseReleaseEvent(event);
+}
+
+void TimelineView::keyPressEvent(QKeyEvent *event)
+{
+    QModelIndexList list = selectionModel()->selectedIndexes();
+
+
+    switch (event->key()){
+    case Qt::Key_Right:
+        model()->setData(list[0],model()->data(list[0],TimelineModel::ClipPosRole).toInt() + 1,TimelineModel::ClipPosRole);
+        viewport()->update();
+        break;
+    case Qt::Key_Left:
+        model()->setData(list[0],model()->data(list[0],TimelineModel::ClipPosRole).toInt() - 1,TimelineModel::ClipPosRole);
+        viewport()->update();
+        break;
+    defualt:
+        break;
+    }
 }
 
 int TimelineView::horizontalOffset() const{return 0;}
@@ -402,6 +475,5 @@ void TimelineView::showEvent(QShowEvent *event)
     updateScrollBars();
     QAbstractItemView::showEvent(event);
 }
-
 
 
