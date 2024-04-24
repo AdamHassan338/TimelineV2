@@ -5,6 +5,7 @@
 
 #include <QApplication>
 #include <QToolBar>
+#include<QStyleFactory>
 int main(int argc, char *argv[])
 {
     QColor bg = QColor("#262626");
@@ -12,6 +13,7 @@ int main(int argc, char *argv[])
     QColor seperator = QColor("#313131");
 
     QApplication a(argc, argv);
+    qApp->setStyle(QStyleFactory::create("fusion"));
     //TimelineWidget w;
     //w.show();
 

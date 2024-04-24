@@ -417,7 +417,7 @@ void TimelineView::mouseMoveEvent(QMouseEvent *event)
 {
     if(mouseHeld){
         m_mouseEnd = event->pos();
-        if(!selectionModel()->selectedIndexes().isEmpty()){
+        if(!selectionModel()->selectedIndexes().isEmpty()&&m_mouseEnd.x()>=0){
             moveSelectedClip(pointToFrame(m_mouseEnd.x()+m_mouseOffset.x()),m_mouseEnd.y()+m_mouseOffset.y());
             viewport()->update();
         }
@@ -495,11 +495,11 @@ void TimelineView::moveSelectedClip(int dx, int dy, bool isMouse)
     }else{
         newPos = model()->data(list[0],TimelineModel::ClipPosRole).toInt() + dx;
     }
-    for(QModelIndex& clipIndex:list){
 
-        model()->setData(list[0],newPos,TimelineModel::ClipPosRole);
 
-    }
+    model()->setData(list[0],newPos,TimelineModel::ClipPosRole);
+
+
 
 
     if(isMouse && indexAt(m_mouseEnd)!=list[0].parent()){
