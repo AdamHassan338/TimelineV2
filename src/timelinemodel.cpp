@@ -32,6 +32,8 @@ void TimelineModel::addClip(int trackIndex, int pos, int in, int out)
 
     reCalculateLength();
 
+    emit timelineUpdated();
+
 
     return;
 
@@ -82,6 +84,8 @@ void TimelineModel::moveClipToTrack(QModelIndex clipIndex, QModelIndex newTrackI
 
     endMoveRows();
 
+    emit timelineUpdated();
+
 
 }
 
@@ -103,6 +107,8 @@ void TimelineModel::createTrack()
     m_tracks.push_back(track);
     quint64 id = assignIdToTrack(track);
     endInsertRows();
+
+    emit timelineUpdated();
 }
 
 TrackModel *TimelineModel::findParentTrackOfClip(ClipModel *clip) const {
@@ -138,6 +144,30 @@ QModelIndex TimelineModel::createFakeIndex()
 {
     return createIndex(rowCount(QModelIndex()),columnCount(QModelIndex()),nullptr);
 
+}
+
+void TimelineModel::movePlayhead(int dx)
+{
+    if(playheadPos>0)
+        playheadPos+=dx;
+    if(playheadPos>m_length)
+        playheadPos-=dx;
+
+    emit timelineUpdated();
+}
+
+int TimelineModel::getPlayheadPos() const
+{
+    return playheadPos;
+}
+
+void TimelineModel::setPlayheadPos(int newPlayheadPos)
+{
+    if(newPlayheadPos>m_length)
+        return;
+    playheadPos = newPlayheadPos;
+
+    emit timelineUpdated();
 }
 
 QModelIndex TimelineModel::index(int row, int column, const QModelIndex &parent) const
@@ -318,16 +348,19 @@ bool TimelineModel::setData(const QModelIndex &index, const QVariant &value, int
     case ClipInRole:
         clip = (ClipModel*)FromID(index.internalId());
         clip->setIn(value.toInt());
+        emit timelineUpdated();
         return true;
         break;
     case ClipOutRole:
         clip = (ClipModel*)FromID(index.internalId());
         clip->setOut(value.toInt());
+        emit timelineUpdated();
         return true;
         break;
     case ClipPosRole:
         clip = (ClipModel*)FromID(index.internalId());
         clip->setPos(value.toInt());
+        emit timelineUpdated();
         return true;
         break;
     defualt:

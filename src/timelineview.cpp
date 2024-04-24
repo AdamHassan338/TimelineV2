@@ -214,6 +214,30 @@ void TimelineView::paintEvent(QPaintEvent *event)
                          i  - m_scrollOffset.x(),rulerHeight);
     }
 
+
+
+    painter.restore();
+
+
+    //draw playhead
+    painter.save();
+
+
+
+    QPoint kite[5]{
+        QPoint(0,0),QPoint(-playheadwidth,-playheadCornerHeight),QPoint(-playheadwidth,-playheadheight),QPoint(playheadwidth,-playheadheight),QPoint(playheadwidth,-playheadCornerHeight)
+    };
+    int playheadPos = frameToPoint(((TimelineModel*)model())->getPlayheadPos());
+    for(QPoint &p:kite){
+        p.setX(p.x()+playheadPos);
+        p.setY(p.y()+rulerHeight);
+    }
+    painter.setBrush(Qt::white);
+    painter.drawConvexPolygon(kite,5);
+    painter.setPen(Qt::white);
+    painter.drawLine(QPoint(playheadPos,rulerHeight),QPoint(playheadPos,viewport()->height()));
+
+
     painter.restore();
 
 }
@@ -264,8 +288,8 @@ QModelIndex TimelineView::indexAt(const QPoint &point) const{
         {
             index = model()->index(i,columnIndex,parent);
             parent = index;
-
-            for(int j=0; j<model()->rowCount(index); j++){
+            //selection priority should happen in reverse of paint order
+            for(int j=model()->rowCount(index)-1; j>=0; j--){
 
                 if(visualRect(model()->index(j, columnIndex,index)).contains(point)){
                     return model()->index(j,columnIndex,index);
@@ -399,16 +423,37 @@ void TimelineView::setModel(QAbstractItemModel *model)
 void TimelineView::mousePressEvent(QMouseEvent *event)
 {
     m_mouseStart = event->pos();
+    m_mouseEnd = m_mouseStart;
     mouseHeld = true;
+    m_playheadSelected = false;
+selectionModel()->clearSelection();
 
-    QModelIndex item = indexAt(event->pos());
-    selectionModel()->clearSelection();
+    int playheadPos = frameToPoint(((TimelineModel*)model())->getPlayheadPos());
+    QRect playheadHitBox(QPoint(playheadPos,rulerHeight),QPoint(playheadPos+3,viewport()->height()));
+    QRect playheadHitBox2(QPoint(playheadPos-playheadwidth,-playheadheight + rulerHeight),QPoint(playheadPos+playheadwidth,rulerHeight));
 
-    //item pressed was a clip
-    if(item.parent().isValid()){
-        selectionModel()->select(item,QItemSelectionModel::Select);
-        m_mouseOffset.setX(frameToPoint(model()->data(item,TimelineModel::ClipPosRole).toInt()) - m_mouseStart.x());
+    if(playheadHitBox.contains(m_mouseStart)||playheadHitBox2.contains(m_mouseStart)){
+        qDebug()<<"playheadSelected";
+        m_playheadSelected = true;
+    }else{
+        m_playheadSelected = false;
+
+        QModelIndex item = indexAt(event->pos());
+        selectionModel()->clearSelection();
+
+        //item pressed was a clip
+        if(item.parent().isValid()){
+            selectionModel()->select(item,QItemSelectionModel::Select);
+            m_mouseOffset.setX(frameToPoint(model()->data(item,TimelineModel::ClipPosRole).toInt()) - m_mouseStart.x());
+        }
+
     }
+
+    if(selectionModel()->selectedIndexes().isEmpty()){
+        ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x())));
+        viewport()->update();
+    }
+
 
     QAbstractItemView::mousePressEvent(event);
 }
@@ -422,6 +467,12 @@ void TimelineView::mouseMoveEvent(QMouseEvent *event)
             viewport()->update();
         }
 
+        if(m_playheadSelected){
+
+            ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x())));
+            viewport()->update();
+        }
+
     }
     QAbstractItemView::mouseMoveEvent(event);
 }
@@ -429,6 +480,7 @@ void TimelineView::mouseMoveEvent(QMouseEvent *event)
 void TimelineView::mouseReleaseEvent(QMouseEvent *event)
 {
     mouseHeld = false;
+    m_playheadSelected = false;
     m_mouseEnd = event->pos();
 
 
@@ -440,13 +492,18 @@ void TimelineView::keyPressEvent(QKeyEvent *event)
 {
     QModelIndexList list = selectionModel()->selectedIndexes();
 
+    TimelineModel* timelinemodel = (TimelineModel*)model();
 
     switch (event->key()){
     case Qt::Key_Right:
+        if(list.isEmpty())
+            timelinemodel->movePlayhead(1);
         moveSelectedClip(1,0,false);
         viewport()->update();
         break;
     case Qt::Key_Left:
+        if(list.isEmpty())
+            timelinemodel->movePlayhead(-1);
         moveSelectedClip(-1,0,false);
         viewport()->update();
         break;
@@ -489,6 +546,8 @@ void TimelineView::showEvent(QShowEvent *event)
 void TimelineView::moveSelectedClip(int dx, int dy, bool isMouse)
 {
     QModelIndexList list = selectionModel()->selectedIndexes();
+    if(list.isEmpty())
+        return;
     int newPos;
     if(isMouse){
         newPos = dx;

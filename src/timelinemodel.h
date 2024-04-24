@@ -27,10 +27,15 @@ public:
     }
     //function for creating fake index, used when creating a new track. one that isnt QModelIndex() but is still invalid
     QModelIndex createFakeIndex();
+    void movePlayhead(int dx);
+
+signals:
+    void timelineUpdated();
 
 private:
     //length of the timeline, grows automaticly with clips
     int m_length = 0;
+    int playheadPos = 5;
 
     enum ItemType {
         Track,
@@ -135,6 +140,8 @@ public:
 
     // QAbstractItemModel interface
 public:
+    int getPlayheadPos() const;
+    void setPlayheadPos(int newPlayheadPos);
 };
 
 #endif // TIMELINEMODEL_H

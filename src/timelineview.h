@@ -27,6 +27,11 @@ private:
     QPoint m_mouseEnd;
     QPoint m_mouseOffset;
     bool mouseHeld;
+    bool m_playheadSelected = false;
+
+    int playheadwidth = 5;//real width is 2x this
+    int playheadheight = 16;
+    int playheadCornerHeight = playheadheight/4;
 
 
     int getTrackWdith() const;
