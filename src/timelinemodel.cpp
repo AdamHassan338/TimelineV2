@@ -299,6 +299,11 @@ QVariant TimelineModel::data(const QModelIndex &index, int role) const
     //if (role != Qt::DisplayRole)
     //    return QVariant();
 
+    //needed due to fake index created by TimelineModel::indexAt, tiggered by tooltips etc
+    if(!hasIndex(index.row(),index.column(),index.parent())){
+        return QVariant();
+    }
+
     if(!index.parent().isValid()){
         TrackModel* track;
         if(role==Qt::ToolTipRole){
