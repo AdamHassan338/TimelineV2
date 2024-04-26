@@ -21,6 +21,9 @@ private:
     int trackwidth;//50*timescale;
     int pointToFrame(int point) const;
     int frameToPoint(int frame) const;
+
+    //cuts selected clip under playhead;
+    void cutClip();
     ClipDelegate clipDelegate;
 
     QPoint m_mouseStart;
@@ -35,6 +38,8 @@ private:
 
 
     int getTrackWdith() const;
+    int getPlayheadPos();
+
 public slots:
     void setScale(double value);
 

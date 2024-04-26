@@ -18,17 +18,11 @@ void TimelineModel::addClip(int trackIndex, int pos, int in, int out)
     }
 
     QModelIndex parentIndex = index(trackIndex, 0, QModelIndex());
-    int rows = rowCount(parentIndex);
 
 
     ClipModel* clip = new ClipModel(pos,in,out,track);
 
-    beginInsertRows(parentIndex,rows,rows);
-    m_clips.push_back(clip);
-    m_tracks.at(trackIndex)->addClip(clip);
-    quint64 id = assignIdToClip(clip);
-
-    endInsertRows();
+    insertClip(clip,parentIndex);
 
     reCalculateLength();
 
@@ -37,6 +31,70 @@ void TimelineModel::addClip(int trackIndex, int pos, int in, int out)
 
     return;
 
+}
+
+void TimelineModel::deleteClip(QModelIndex clipIndex)
+{
+    if(m_clipIDs.find(clipIndex.internalId())==m_clipIDs.cend())
+        return;
+
+    if(!clipIndex.isValid())
+        return;
+
+    beginRemoveRows(clipIndex.parent(),clipIndex.row(),clipIndex.row());
+    quint64 id = clipIndex.internalId();
+    {
+        std::unordered_map<quint64, void*>::iterator it = m_idToObjectMap.begin();
+        ClipModel* clip = (ClipModel*)FromID(clipIndex.internalId());
+
+        m_tracks.at(clipIndex.parent().row())->removeClip(clip);
+
+        auto clipsIt = std::find(m_clips.begin(),m_clips.end(),clip);
+        if(clipsIt!=m_clips.end())
+            m_clips.erase(clipsIt);
+
+        delete clip;
+
+        for(;it!=m_idToObjectMap.end();){
+            if(it->first==id){
+                it = m_idToObjectMap.erase(it);
+                break;
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+
+
+    for (auto it = m_clipIDs.begin(); it != m_clipIDs.end();) {
+        if (*it == id) {
+            it = m_clipIDs.erase(it);
+            break;
+        } else {
+            ++it;
+        }
+    }
+
+    //reCalculateLength();
+
+
+
+    endRemoveRows();
+
+
+}
+
+void TimelineModel::insertClip(ClipModel *clip, QModelIndex parentTrackIndex){
+
+    int rows = rowCount(parentTrackIndex);
+
+    beginInsertRows(parentTrackIndex,rows,rows);
+    m_clips.push_back(clip);
+    m_tracks.at(parentTrackIndex.row())->addClip(clip);
+    quint64 id = assignIdToClip(clip);
+
+    endInsertRows();
 }
 
 void TimelineModel::moveClipToTrack(QModelIndex clipIndex, QModelIndex newTrackIndex)
@@ -97,6 +155,48 @@ void TimelineModel::reCalculateLength()
 
 }
 
+void TimelineModel::cutClip(QModelIndex clipIndex, int cutFrame)
+{
+    //IF SELECTED IS NOT A CLIP JUST IN CASE
+    if(!clipIndex.isValid() || !clipIndex.parent().isValid() )
+        return;
+
+
+    //ClipModel* copy = (ClipModel*)malloc(sizeof(ClipModel));
+    //memcpy(copy,FromID(clipIndex.internalId()),sizeof(ClipModel));
+
+
+    // original in = in; original out = cutframe-1-pos + in;
+    // copy pos = cutfrmame; copy in = original out + 1
+
+
+    // calculate new in out and positions
+    ClipModel* copy = new ClipModel(*(ClipModel*)FromID(clipIndex.internalId()));
+    int offset = copy->pos();
+    int originalIn = copy->in();
+    int originalOut = copy->out();
+    int length = copy->out() - copy->in();
+
+    int originalNewOut = cutFrame-offset-1  + originalIn;
+
+    ((ClipModel*)FromID(clipIndex.internalId()))->setOut(originalNewOut);
+
+
+    copy->setIn(originalNewOut+1);
+    copy->setPos(cutFrame);
+
+
+    QModelIndex parentIndex = clipIndex.parent();
+
+    insertClip(copy,parentIndex);
+
+
+    emit timelineUpdated();
+
+
+
+}
+
 void TimelineModel::createTrack()
 {
     int rows = rowCount(QModelIndex());
@@ -148,11 +248,14 @@ QModelIndex TimelineModel::createFakeIndex()
 
 void TimelineModel::movePlayhead(int dx)
 {
-    if(playheadPos>0)
+    if(playheadPos>=0)
         playheadPos+=dx;
     if(playheadPos>m_length)
         playheadPos-=dx;
+    if(playheadPos<0)
+        playheadPos=0;
 
+    qDebug()<<"frame: " <<playheadPos;
     emit timelineUpdated();
 }
 

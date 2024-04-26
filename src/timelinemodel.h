@@ -15,11 +15,16 @@ public:
 
     //void addTrack(int x);
     void addClip(int trackIndex, int pos, int in, int out);
+    void deleteClip(QModelIndex clipIndex);
+
     void moveClipToTrack(QModelIndex clipIndex,QModelIndex newTrackIndex);
     //re calcualtes the length of timeline in frames
     void reCalculateLength();
     std::vector<TrackModel*> m_tracks;
     std::vector<ClipModel*> m_clips;
+
+    //cut action key is Qt::Key_S
+    void cutClip(QModelIndex clipIndex, int cutFrame);
 
     void createTrack();
     void* FromID(quint64 id) const{
@@ -42,6 +47,9 @@ private:
         Clip,
         Invalid
     };
+
+    void insertClip(ClipModel* clip,QModelIndex parentTrackIndex);
+
 
     TrackModel* findParentTrackOfClip(ClipModel* clip) const;
 

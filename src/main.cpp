@@ -28,10 +28,10 @@ int main(int argc, char *argv[])
     model->createTrack();
     model->createTrack();
 
-    // track post in out
-    model->addClip(0,1,0,30);
+    // track pos in out
+    model->addClip(0,0,0,30);
     model->addClip(1,20,0,30);
-    model->addClip(1,50,0,30);
+    model->addClip(1,51,0,30);
 
     model->addClip(2,5,0,30);
     model->addClip(2,40,0,25);
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     model->addClip(5,100,0,30);
 
     model->addClip(4,80,0,30);
-    model->addClip(4,130,0,25);
+    model->addClip(4,131,0,25);
     model->addClip(4,165,0,50);
 
 

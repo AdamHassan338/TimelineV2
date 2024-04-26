@@ -227,7 +227,7 @@ void TimelineView::paintEvent(QPaintEvent *event)
     QPoint kite[5]{
         QPoint(0,0),QPoint(-playheadwidth,-playheadCornerHeight),QPoint(-playheadwidth,-playheadheight),QPoint(playheadwidth,-playheadheight),QPoint(playheadwidth,-playheadCornerHeight)
     };
-    int playheadPos = frameToPoint(((TimelineModel*)model())->getPlayheadPos());
+    int playheadPos = frameToPoint(((TimelineModel*)model())->getPlayheadPos()) -m_scrollOffset.x();
     for(QPoint &p:kite){
         p.setX(p.x()+playheadPos);
         p.setY(p.y()+rulerHeight);
@@ -256,7 +256,7 @@ void TimelineView::updateScrollBars()
         return;
 
     int max = 0;
-    max = frameToPoint(model()->data(QModelIndex(),TimelineModel::TimelineLengthRole).toInt()) -  viewport()->width();
+    max = getTrackWdith() -  viewport()->width();
 
 
     horizontalScrollBar()->setRange(0, max);
@@ -321,7 +321,7 @@ QRect TimelineView::itemRect(const QModelIndex &index) const
     else{
 
         int in = model()->data(index,TimelineModel::ClipInRole).toInt();
-        int out = model()->data(index,TimelineModel::ClipOutRole).toInt();
+        int out = model()->data(index,TimelineModel::ClipOutRole).toInt()+1;
         int pos = frameToPoint(model()->data(index,TimelineModel::ClipPosRole).toInt());
         int track = index.parent().row();
 
@@ -353,9 +353,36 @@ int TimelineView::frameToPoint(int frame) const
     return frame*timescale;
 }
 
-int TimelineView::getTrackWdith() const{
-    return frameToPoint(model()->data(QModelIndex(),TimelineModel::TimelineLengthRole).toInt());
+void TimelineView::cutClip()
+{
+    QModelIndexList list = selectionModel()->selectedIndexes();
+    if(list.isEmpty())
+        return;
+
+    //IF SELECTED IS NOT A CLIP JUST IN CASE
+    if(!list[0].isValid() || !list[0].parent().isValid())
+        return;
+
+    int playheadPos = pointToFrame(getPlayheadPos());
+    int clipIn = model()->data(list[0],TimelineModel::ClipInRole).toInt();
+    int clipOut = model()->data(list[0],TimelineModel::ClipOutRole).toInt();
+    int clipPos = model()->data(list[0],TimelineModel::ClipPosRole).toInt();
+
+    int clipLength = clipOut - clipIn ;
+
+    if(playheadPos> clipPos  && playheadPos<clipLength + clipPos){
+        ((TimelineModel*)model())->cutClip(list[0],playheadPos);
+    }
+
+    viewport()->update();;
+
 }
+
+int TimelineView::getTrackWdith() const{
+    return frameToPoint(model()->data(QModelIndex(),TimelineModel::TimelineLengthRole).toInt() + 1);
+}
+
+int TimelineView::getPlayheadPos() {return frameToPoint(((TimelineModel*)model())->getPlayheadPos());}
 
 void TimelineView::setScale(double value)//late make this scale from point of mouse
 {
@@ -447,7 +474,7 @@ selectionModel()->clearSelection();
             m_mouseOffset.setX(frameToPoint(model()->data(item,TimelineModel::ClipPosRole).toInt()) - m_mouseStart.x());
         }
         if(selectionModel()->selectedIndexes().isEmpty()){
-            ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x())));
+            ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x()+m_scrollOffset.x())));
             viewport()->update();
         }
 
@@ -467,13 +494,13 @@ void TimelineView::mouseMoveEvent(QMouseEvent *event)
             moveSelectedClip(pointToFrame(m_mouseEnd.x()+m_mouseOffset.x()),m_mouseEnd.y()+m_mouseOffset.y());
             viewport()->update();
         }else{
-            ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x())));
+            ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x() + m_scrollOffset.x())));
             viewport()->update();
         }
 
         if(m_playheadSelected){
 
-            ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x())));
+            ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x() + m_scrollOffset.x())));
             viewport()->update();
         }
 
@@ -516,6 +543,15 @@ void TimelineView::keyPressEvent(QKeyEvent *event)
         break;
     case Qt::Key_Up:
         moveSelectedClip(0,-1,false);
+        break;
+    case Qt::Key_S:
+        cutClip();
+        break;
+    case Qt::Key_Delete:
+        if(list.isEmpty())
+            break;
+        timelinemodel->deleteClip(list[0]);
+        clearSelection();
         break;
     defualt:
         break;
