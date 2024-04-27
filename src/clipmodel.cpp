@@ -1,6 +1,6 @@
 #include "clipmodel.h"
 
-ClipModel::ClipModel(int pos, int in, int out, TrackModel* parent) : m_pos(pos),m_in(in),m_out(out), m_parent(parent)
+ClipModel::ClipModel(int pos, int in, int out, TrackModel* parent) : m_pos(pos),m_in(in),m_out(out), m_parent(parent),m_length(out)
 {
 
 }
@@ -38,4 +38,9 @@ int ClipModel::out() const
 void ClipModel::setOut(int newOut)
 {
     m_out = newOut;
+}
+
+int ClipModel::length() const
+{
+    return m_length;
 }

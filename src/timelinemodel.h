@@ -137,6 +137,7 @@ public:
         ClipInRole,
         ClipOutRole,
         ClipPosRole,
+        ClipLengthRole,
         TrackNumberRole,
         TimelineLengthRole,
         SelectedRole,

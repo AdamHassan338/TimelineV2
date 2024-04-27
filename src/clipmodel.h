@@ -10,7 +10,7 @@ public:
 
     //copy constructor
     ClipModel(const ClipModel& other)
-        : m_pos(other.m_pos), m_in(other.m_in), m_out(other.m_out), m_parent(other.m_parent) {
+        : m_pos(other.m_pos), m_in(other.m_in), m_out(other.m_out), m_parent(other.m_parent), m_length(other.m_length) {
     }
 
     //copy assignment operator
@@ -20,6 +20,7 @@ public:
             m_in = other.m_in;
             m_out = other.m_out;
             m_parent = other.m_parent;
+            m_length = other.m_length;
 
         }
         return *this;
@@ -44,12 +45,15 @@ public:
 
     }
 
+    int length() const;
+
 private:
     TrackModel* m_parent;
     //store resoruce here
     int m_pos;//position on timeline of first frame
     int m_in;//start time of clip from resource
     int m_out;//end time of clip from resource
+    int m_length;//length of orignal media
 
 
 };

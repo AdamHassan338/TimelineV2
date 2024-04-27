@@ -4,6 +4,7 @@
 #include <QAbstractItemView>
 #include "clipdelegate.h"
 
+enum  hoverState {LEFT,RIGHT,NONE};
 
 class TimelineView : public QAbstractItemView
 {
@@ -29,12 +30,15 @@ private:
     QPoint m_mouseStart;
     QPoint m_mouseEnd;
     QPoint m_mouseOffset;
-    bool mouseHeld;
+    bool mouseHeld = false;
     bool m_playheadSelected = false;
+    hoverState m_mouseUnderClipEdge = NONE;
 
     int playheadwidth = 5;//real width is 2x this
     int playheadheight = 16;
     int playheadCornerHeight = playheadheight/4;
+
+    QModelIndex m_hoverIndex = QModelIndex();
 
 
     int getTrackWdith() const;

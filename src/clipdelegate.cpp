@@ -14,8 +14,8 @@ void ClipDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
 {
     QColor clipColour("#729ACC");
     QColor cornerColour("#c8c8c8");
-    //if(option.state & QStyle::State_Selected)
-       //    clipColour = Qt::red;
+    if(option.state & QStyle::State_MouseOver)
+           clipColour = clipColour.darker(150);
     int trackHeight = 25;
     int rulerHeight = 40;
     painter->save();
@@ -63,7 +63,7 @@ void ClipDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
         textRect.translate(0,option.rect.top());
     }else{
         textRect.translate(option.rect.topLeft());
-    }    painter->drawText(textRect, text);
+    }   painter->drawText(textRect, text);
     painter->setPen(Qt::red);
     //painter->drawRect(textRect);
     painter->restore();

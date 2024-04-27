@@ -30,6 +30,7 @@ TimelineView::TimelineView()
     setSelectionBehavior(SelectItems);
     setAutoScroll(true);
     setAutoScrollMargin(5);
+    setMouseTracking(true);
 
 
 
@@ -116,6 +117,12 @@ void TimelineView::paintEvent(QPaintEvent *event)
             }else{
                 option.state &= ~QStyle::State_Selected;
             }
+            if(m_hoverIndex==clipIndex){
+                option.state |= QStyle::State_MouseOver;
+            }else{
+                option.state &= ~QStyle::State_MouseOver;
+            }
+            option.text = QString(QString::number(model()->data(clipIndex,TimelineModel::ClipInRole).toInt()) + "-" + QString::number(model()->data(clipIndex,TimelineModel::ClipOutRole).toInt()));
             option.rect = visualRect(clipIndex);
             painter.save();
             clipDelegate.paint(&painter,option,clipIndex);
@@ -370,7 +377,7 @@ void TimelineView::cutClip()
 
     int clipLength = clipOut - clipIn ;
 
-    if(playheadPos> clipPos  && playheadPos<clipLength + clipPos){
+    if(playheadPos> clipPos  && playheadPos<=clipLength + clipPos){
         ((TimelineModel*)model())->cutClip(list[0],playheadPos);
     }
 
@@ -453,7 +460,8 @@ void TimelineView::mousePressEvent(QMouseEvent *event)
     m_mouseEnd = m_mouseStart;
     mouseHeld = true;
     m_playheadSelected = false;
-selectionModel()->clearSelection();
+    m_hoverIndex = QModelIndex();
+    selectionModel()->clearSelection();
 
     int playheadPos = frameToPoint(((TimelineModel*)model())->getPlayheadPos());
     QRect playheadHitBox(QPoint(playheadPos-3,rulerHeight),QPoint(playheadPos+2,viewport()->height()));
@@ -462,23 +470,27 @@ selectionModel()->clearSelection();
     if(playheadHitBox.contains(m_mouseStart)||playheadHitBox2.contains(m_mouseStart)){
         qDebug()<<"playheadSelected";
         m_playheadSelected = true;
-    }else{
-        m_playheadSelected = false;
+        return QAbstractItemView::mousePressEvent(event);
+    }
 
-        QModelIndex item = indexAt(event->pos());
-        selectionModel()->clearSelection();
+    m_playheadSelected = false;
 
-        //item pressed was a clip
-        if(item.parent().isValid()){
-            selectionModel()->select(item,QItemSelectionModel::Select);
-            m_mouseOffset.setX(frameToPoint(model()->data(item,TimelineModel::ClipPosRole).toInt()) - m_mouseStart.x());
-        }
-        if(selectionModel()->selectedIndexes().isEmpty()){
-            ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x()+m_scrollOffset.x())));
-            viewport()->update();
-        }
+
+    QModelIndex item = indexAt(event->pos());
+    selectionModel()->clearSelection();
+
+    //item pressed was a clip
+    if(item.parent().isValid()){
+        selectionModel()->select(item,QItemSelectionModel::Select);
+        m_mouseOffset.setX(frameToPoint(model()->data(item,TimelineModel::ClipPosRole).toInt()) - m_mouseStart.x());
 
     }
+    if(selectionModel()->selectedIndexes().isEmpty()){
+        ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x()+m_scrollOffset.x())));
+        viewport()->update();
+    }
+
+
 
 
 
@@ -490,7 +502,30 @@ void TimelineView::mouseMoveEvent(QMouseEvent *event)
 {
     if(mouseHeld){
         m_mouseEnd = event->pos();
-        if(!selectionModel()->selectedIndexes().isEmpty()&&m_mouseEnd.x()>=0){
+        if(m_mouseUnderClipEdge!=hoverState::NONE && !selectionModel()->selectedIndexes().isEmpty()){
+            QModelIndex clip = selectedIndexes().at(0);
+
+            int in= model()->data(clip,TimelineModel::ClipInRole).toInt();
+            int out= model()->data(clip,TimelineModel::ClipOutRole).toInt();
+            int pos= model()->data(clip,TimelineModel::ClipPosRole).toInt();
+            int length = model()->data(clip,TimelineModel::ClipLengthRole).toInt();
+            //in = frame - pos
+            if(m_mouseUnderClipEdge==hoverState::LEFT){
+                int newIn = std::clamp(in+ pointToFrame(m_mouseEnd.x()) - pos,0,out);
+                model()->setData(clip,newIn,TimelineModel::ClipInRole);
+                //clamp to prevent clip moveing when resizing
+                moveSelectedClip(std::clamp(pointToFrame(m_mouseEnd.x()) - pos,-in,out-in),0+0,false);
+
+                viewport()->update();
+            }else if(m_mouseUnderClipEdge==hoverState::RIGHT){
+                //clamped to not go over clipin or src media length
+                int newOut = std::clamp(out + pointToFrame(m_mouseEnd.x()) - pos+in-out,in,length);
+                model()->setData(clip,newOut,TimelineModel::ClipOutRole);
+
+                viewport()->update();
+            }
+
+        }else if(!selectionModel()->selectedIndexes().isEmpty()&&m_mouseEnd.x()>=0){
             moveSelectedClip(pointToFrame(m_mouseEnd.x()+m_mouseOffset.x()),m_mouseEnd.y()+m_mouseOffset.y());
             viewport()->update();
         }else{
@@ -503,8 +538,29 @@ void TimelineView::mouseMoveEvent(QMouseEvent *event)
             ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x() + m_scrollOffset.x())));
             viewport()->update();
         }
+        return QAbstractItemView::mouseMoveEvent(event);
+    }
+
+    QPoint pos = event->pos();
+    m_hoverIndex = indexAt(event->pos());
+    QRect rect = visualRect(m_hoverIndex);
+    m_mouseUnderClipEdge = hoverState::NONE;
+    //5 is hitbox size + -5px
+    //see if item is a clip
+    if((m_hoverIndex.isValid() && m_hoverIndex.parent().isValid())){
+        if(abs(pos.x() - rect.left())<=5){
+            m_mouseUnderClipEdge=hoverState::LEFT;
+        }else if(abs(pos.x() - rect.right())<=5){
+            m_mouseUnderClipEdge=hoverState::RIGHT;
+        }
 
     }
+    if (m_mouseUnderClipEdge != hoverState::NONE) {
+        setCursor(Qt::SizeHorCursor);
+    }else {
+        unsetCursor();
+    }
+
     QAbstractItemView::mouseMoveEvent(event);
 }
 

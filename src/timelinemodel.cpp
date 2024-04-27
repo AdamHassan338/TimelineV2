@@ -76,9 +76,6 @@ void TimelineModel::deleteClip(QModelIndex clipIndex)
         }
     }
 
-    //reCalculateLength();
-
-
 
     endRemoveRows();
 
@@ -428,6 +425,11 @@ QVariant TimelineModel::data(const QModelIndex &index, int role) const
     case ClipPosRole:
         clip = (ClipModel*)FromID(index.internalId());
         return QVariant::fromValue(clip->pos());
+        break;
+    case ClipLengthRole:
+        clip = (ClipModel*)FromID(index.internalId());
+        return QVariant::fromValue(clip->length());
+        return true;
         break;
     defualt:
         return "clip";
