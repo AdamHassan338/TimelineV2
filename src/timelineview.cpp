@@ -18,7 +18,7 @@ int textoffset = 13;
 
 int baseTimeScale = 50;
 
-TimelineView::TimelineView()
+TimelineView::TimelineView(QWidget *parent) : QAbstractItemView{parent}
 {
     horizontalScrollBar()->setSingleStep(10);
     horizontalScrollBar()->setPageStep(100);
@@ -500,6 +500,8 @@ void TimelineView::mousePressEvent(QMouseEvent *event)
 
 void TimelineView::mouseMoveEvent(QMouseEvent *event)
 {
+    qDebug()<<selectionModel()->selectedIndexes().size();
+
     if(mouseHeld){
         m_mouseEnd = event->pos();
         if(m_mouseUnderClipEdge!=hoverState::NONE && !selectionModel()->selectedIndexes().isEmpty()){

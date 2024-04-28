@@ -10,7 +10,7 @@ class TimelineView : public QAbstractItemView
 {
     Q_OBJECT
 public:
-    TimelineView();
+    TimelineView(QWidget *parent = nullptr);
     void updateScrollBars();
 
 private:

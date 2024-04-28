@@ -4,6 +4,9 @@
 #include "trackmodel.h"
 #include <stdlib.h>
 #include <string>
+#include <QMimeData>
+#include <QIODevice>
+#include <algorithm>
 TimelineModel::TimelineModel()
 {
 
@@ -239,7 +242,7 @@ int TimelineModel::findClipRow(TrackModel *track, ClipModel *clip) const{
 
 QModelIndex TimelineModel::createFakeIndex()
 {
-    return createIndex(rowCount(QModelIndex()),columnCount(QModelIndex()),nullptr);
+        return createIndex(rowCount(QModelIndex()),columnCount(QModelIndex()),nullptr);
 
 }
 
@@ -256,6 +259,11 @@ void TimelineModel::movePlayhead(int dx)
     emit timelineUpdated();
 }
 
+void TimelineModel::moveTrack(QModelIndex track, QModelIndex dest)
+{
+
+}
+
 int TimelineModel::getPlayheadPos() const
 {
     return playheadPos;
@@ -268,6 +276,126 @@ void TimelineModel::setPlayheadPos(int newPlayheadPos)
     playheadPos = newPlayheadPos;
 
     emit timelineUpdated();
+}
+
+QStringList TimelineModel::mimeTypes() const
+{
+    QStringList types;
+    types << "application/vnd.track";
+    return types;
+   //return QAbstractItemModel::mimeTypes();
+}
+
+QMimeData *TimelineModel::mimeData(const QModelIndexList &indexes) const
+{
+    QMimeData *mimeData = new QMimeData();
+    QByteArray encodedData;
+    QDataStream stream(&encodedData, QIODevice::WriteOnly);
+
+    foreach (const QModelIndex &index, indexes) {
+        if (index.isValid()) {
+            //int track = data(index,TrackNumberRole ).toInt(); // Assuming tracks are stored as QString
+            int track = index.row();
+            stream << track;
+        }
+    }
+
+    mimeData->setData("application/vnd.track", encodedData);
+    return mimeData;
+}
+
+bool TimelineModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
+{
+    Q_UNUSED(action);
+    Q_UNUSED(row);
+    Q_UNUSED(parent);
+
+    if (!data->hasFormat("application/vnd.track"))
+        return false;
+
+    if (column > 0)
+        return false;
+
+    return true;
+
+}
+
+bool TimelineModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
+{
+    if (!canDropMimeData(data, action, row, column, parent))
+        return false;
+
+    if (action == Qt::IgnoreAction)
+        return true;
+
+    int newRow = parent.row();
+
+   /* if(parent.row() ==-1){
+        newRow=0;
+    }//else if(!parent.isValid()){
+       // newRow=0;}
+    else if(!hasIndex(parent.row(),parent.column(),parent.parent())){
+        newRow = parent.row()-1;
+    }
+    if(row!=-1){
+        newRow =row;
+    }*/
+
+    newRow = parent.row();
+    if(!parent.isValid()){
+        newRow=0;
+    }
+    if(!hasIndex(parent.row(),parent.column(),parent.parent())){
+         newRow = parent.row()-1;
+    }
+
+    QByteArray encodedData = data->data("application/vnd.track");
+    QDataStream stream(&encodedData, QIODevice::ReadOnly);
+    QList<int> newItems;
+    int rows = 0;
+
+    while (!stream.atEnd()) {
+        int track;
+        stream >> track;
+        newItems << track;
+        ++rows;
+    }
+
+    for (int &track : newItems) {
+
+        if (track < 0 || track >= m_tracks.size() || newRow < 0 || newRow > m_tracks.size()) {
+            return false;
+        }
+
+        if(track + 1 == newRow){
+            std::swap(track,newRow);
+        }
+
+        if(track==newRow)
+            return false;
+        beginMoveRows(QModelIndex(),track,track,QModelIndex(),newRow);
+        std::vector<TrackModel*> itemsToMove;
+        itemsToMove.push_back(m_tracks.at(track));
+        m_tracks.erase(m_tracks.begin()+ track);
+        m_tracks.insert(m_tracks.begin() + newRow,itemsToMove.begin(),itemsToMove.end());
+        endMoveRows();
+
+
+    }
+    return true;
+
+
+}
+
+Qt::DropActions TimelineModel::supportedDropActions() const
+{
+return Qt::MoveAction;
+}
+
+Qt::ItemFlags TimelineModel::flags(const QModelIndex &index) const
+{
+    return QAbstractItemModel::flags(index) |= Qt::ItemIsDropEnabled;
+    //return Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled;
 }
 
 QModelIndex TimelineModel::index(int row, int column, const QModelIndex &parent) const
@@ -409,6 +537,11 @@ QVariant TimelineModel::data(const QModelIndex &index, int role) const
         if(role==Qt::ToolTipRole){
             track = (TrackModel*)FromID(index.internalId());
             return QVariant::fromValue("track " + QString::number(index.row()));
+        }
+
+        if(role ==TrackNumberRole){
+            track = (TrackModel*)FromID(index.internalId());
+            return QVariant::fromValue(index.row());
         }
         return QVariant();
     }

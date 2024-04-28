@@ -34,6 +34,8 @@ public:
     QModelIndex createFakeIndex();
     void movePlayhead(int dx);
 
+    void moveTrack(QModelIndex track,QModelIndex dest);
+
 signals:
     void timelineUpdated();
 
@@ -151,6 +153,21 @@ public:
 public:
     int getPlayheadPos() const;
     void setPlayheadPos(int newPlayheadPos);
+
+    // QAbstractItemModel interface
+public:
+    QStringList mimeTypes() const override;
+    QMimeData *mimeData(const QModelIndexList &indexes) const override;
+    bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const override;
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) override;
+    Qt::DropActions supportedDropActions() const override;
+
+    // QAbstractItemModel interface
+public:
+
+    // QAbstractItemModel interface
+public:
+    Qt::ItemFlags flags(const QModelIndex &index) const override;
 };
 
 #endif // TIMELINEMODEL_H

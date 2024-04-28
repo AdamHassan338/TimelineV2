@@ -2,10 +2,12 @@
 #include "timelinemodel.h"
 #include "timelinewidget.h"
 #include "timelineview.h"
+#include "tracklistview.h"
 
 #include <QApplication>
 #include <QToolBar>
 #include<QStyleFactory>
+#include <QSplitter>
 int main(int argc, char *argv[])
 {
     QColor bg = QColor("#262626");
@@ -16,7 +18,7 @@ int main(int argc, char *argv[])
     qApp->setStyle(QStyleFactory::create("fusion"));
     //TimelineWidget w;
     //w.show();
-
+    QSplitter* splitter = new QSplitter(Qt::Horizontal);
     TimelineModel* model = new TimelineModel();
     model->createTrack();
     model->createTrack();
@@ -49,18 +51,24 @@ int main(int argc, char *argv[])
     //model->add(0);
     TimelineView* view = new TimelineView();
     view->resize(880,230);
+    TracklistView* tracklist = new TracklistView();
     //view->setSelectionMode(QAbstractItemView::NoSelection);
     //view->setHeaderHidden(true);
 
     view->setModel(model);
-    view->show();
+    tracklist->setModel(model);
+    //view->show();
 
     QToolBar* toolbar = new QToolBar("zoom slider",view);
     QSlider* slider = new QSlider(Qt::Horizontal);
     slider->setRange(2, 50);
     slider->setValue(5);
     toolbar->addWidget(slider);
-    toolbar->show();
+    //toolbar->show();
+    splitter->addWidget(tracklist);
+    splitter->addWidget(view);
+    splitter->setHandleWidth(0);
+    splitter->show();
 
     QObject::connect(slider,&QSlider::valueChanged,view,&TimelineView::setScale);
 
