@@ -32,6 +32,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         src/timelineview.h src/timelineview.cpp
         src/clipdelegate.h src/clipdelegate.cpp
         src/tracklistview.h src/tracklistview.cpp
+        src/trackdelegate.h src/trackdelegate.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET TimelineV2 APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

@@ -32,8 +32,6 @@ TimelineView::TimelineView(QWidget *parent) : QAbstractItemView{parent}
     setAutoScrollMargin(5);
     setMouseTracking(true);
 
-
-
 }
 
 void TimelineView::paintEvent(QPaintEvent *event)
@@ -577,6 +575,14 @@ void TimelineView::mouseReleaseEvent(QMouseEvent *event)
     QAbstractItemView::mouseReleaseEvent(event);
 }
 
+void TimelineView::leaveEvent(QEvent *event)
+{
+    mouseHeld = false;
+    selectionModel()->clear();
+    m_hoverIndex = QModelIndex();
+    QAbstractItemView::leaveEvent(event);
+}
+
 void TimelineView::keyPressEvent(QKeyEvent *event)
 {
     QModelIndexList list = selectionModel()->selectedIndexes();
@@ -627,6 +633,7 @@ void TimelineView::scrollContentsBy(int dx, int dy)
 {
     m_scrollOffset -= QPoint(dx, dy);
     QAbstractItemView::scrollContentsBy(dx, dy);
+    emit scrolled(dx,dy);
 }
 
 void TimelineView::resizeEvent(QResizeEvent *event)

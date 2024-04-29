@@ -44,7 +44,13 @@ private:
     int getTrackWdith() const;
     int getPlayheadPos();
 
+signals:
+    void scrolled(int dx,int dy);
+
 public slots:
+    void scroll(int dx, int dy){    m_scrollOffset -= QPoint(dx, dy);
+        QAbstractItemView::scrollContentsBy(dx, dy);};
+
     void setScale(double value);
 
 
@@ -80,6 +86,8 @@ protected:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
 
+    void leaveEvent(QEvent *event) override;
+
     void keyPressEvent(QKeyEvent *event) override;
 
     void resizeEvent(QResizeEvent *event) override;
@@ -88,6 +96,7 @@ protected:
 
     //this function moves clips by frame, not viewport pixels
     void moveSelectedClip(int dx, int dy,bool isMouse = true);
+
 };
 
 #endif // TIMELINEVIEW_H

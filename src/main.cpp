@@ -68,9 +68,18 @@ int main(int argc, char *argv[])
     splitter->addWidget(tracklist);
     splitter->addWidget(view);
     splitter->setHandleWidth(0);
+    QList<int> sizes({120,780});
+    splitter->setMouseTracking(true);
+
+
+
+    splitter->resize(880,230);
+    splitter->setSizes(sizes);
     splitter->show();
 
     QObject::connect(slider,&QSlider::valueChanged,view,&TimelineView::setScale);
-
+    QObject::connect(view,&TimelineView::scrolled,tracklist,&TracklistView::scroll);
+    QObject::connect(tracklist,&TracklistView::scrolled,view,&TimelineView::scroll);
     return a.exec();
+
 }

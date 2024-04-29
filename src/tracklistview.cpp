@@ -11,6 +11,15 @@
 TracklistView::TracklistView(QWidget *parent)
     : QAbstractItemView{parent}
 {
+    int trackHeight = 25;
+    int rulerHeight = 40;
+    horizontalScrollBar()->setSingleStep(10);
+    horizontalScrollBar()->setPageStep(100);
+    verticalScrollBar()->setSingleStep(trackHeight);
+    verticalScrollBar()->setPageStep(trackHeight * 5);
+    viewport()->setMinimumHeight(trackHeight + rulerHeight);
+
+
     setAcceptDrops(true);
     setDragEnabled(true);
     setDragDropMode( QAbstractItemView::InternalMove );
@@ -19,6 +28,26 @@ TracklistView::TracklistView(QWidget *parent)
     setSelectionMode(SingleSelection);
     setSelectionBehavior(SelectItems);
     m_scrollOffset = QPoint(0,0);
+
+    setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
+    setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff ) ;
+
+    setEditTriggers(EditTrigger::AllEditTriggers);
+    setItemDelegateForColumn(0,new TrackDelegate);
+
+    setMouseTracking(true);
+}
+
+void TracklistView::updateScrollBars()
+{
+    if(!model())
+        return;
+
+    int max =0;
+    int trackHeight = 25;
+    int rulerHeight = 40;
+
+    verticalScrollBar()->setRange(0,model()->rowCount() * trackHeight + rulerHeight - viewport()->height());
 }
 
 void TracklistView::setModel(QAbstractItemModel *model)
@@ -106,10 +135,41 @@ void TracklistView::paintEvent(QPaintEvent *event)
 
     QRect trackRect;
 
+    QStyleOptionViewItem option;
+    QAbstractItemView::initViewItemOption(&option);
     for (int i = 0; i < model()->rowCount(); ++i){
+        QModelIndex trackIndex = model()->index(i,0);
+        openPersistentEditor(model()->index(i,0));
+        if(selectionModel()->isSelected(trackIndex)){
+            option.state |= QStyle::State_Selected;
+        }else{
+            option.state &= ~QStyle::State_Selected;
+        }
+        if(m_hoverIndex==trackIndex && !selectionModel()->isSelected(trackIndex)){
+            option.state |= QStyle::State_MouseOver;
+            if(isDragging){
+                option.state |= QStyle::State_Raised;
+            }
+        }else{
+            option.state &= ~QStyle::State_MouseOver;
+            if(!isDragging){
+                option.state &=~QStyle::State_Raised;
+            }
+        }
 
-        int trackSplitter = i * trackHeight + rulerHeight ;
-        trackRect = QRect(0,(i * trackHeight)+ rulerHeight,
+
+
+        option.text = QString("" + QString::number(model()->data(model()->index(i,0),TimelineModel::TrackNumberRole).toInt()));
+        option.rect = visualRect(trackIndex);
+        painter.save();
+        itemDelegateForIndex(trackIndex)->paint(&painter,option,trackIndex);
+        painter.restore();
+        /*
+
+
+
+        int trackSplitter = i * trackHeight + rulerHeight - m_scrollOffset.y() ;
+        trackRect = QRect(0,(i * trackHeight)+ rulerHeight - m_scrollOffset.y(),
                           viewportWidth,trackHeight);
         painter.setPen(fillColour);
         painter.setBrush(fillColour.lighter(150));
@@ -122,8 +182,15 @@ void TracklistView::paintEvent(QPaintEvent *event)
 QString::number(model()->data(model()->index(i,0),TimelineModel::TrackNumberRole).toInt()
                                                                                         )));
 
-
+*/
     }
+
+    painter.restore();
+
+    painter.save();
+
+    painter.setBrush(QBrush(bgColour));
+    painter.drawRect(0,0,viewportWidth,rulerHeight);
 
     painter.restore();
 
@@ -138,6 +205,7 @@ void TracklistView::mousePressEvent(QMouseEvent *event)
     m_mouseStart = event->pos();
     m_mouseEnd = m_mouseStart;
     m_mouseHeld = true;
+    m_hoverIndex = QModelIndex();
     selectionModel()->clear();
     QModelIndex item = indexAt( event->pos());
 
@@ -153,6 +221,7 @@ void TracklistView::mouseReleaseEvent(QMouseEvent *event)
 {
 
     m_mouseHeld = false;
+    isDragging = false;
     m_mouseEnd = event->pos();
 
 
@@ -164,17 +233,27 @@ void TracklistView::mouseReleaseEvent(QMouseEvent *event)
 void TracklistView::mouseMoveEvent(QMouseEvent *event)
 {
     m_mouseEnd = event->pos();
-    qDebug()<<selectionModel()->selectedIndexes().size();
-    if(!selectionModel()->selectedIndexes().isEmpty()){
+    m_hoverIndex = indexAt(m_mouseEnd);
+    if(!selectionModel()->selectedIndexes().isEmpty() && m_mouseHeld){
         QDrag* drag = new QDrag(this);
         QMimeData *mimeData = model()->mimeData(selectionModel()->selectedIndexes());
         drag->setMimeData(mimeData);
         drag->exec(Qt::MoveAction);
+        isDragging = true;
     }
 
     QAbstractItemView::mouseMoveEvent(event);
+    m_hoverIndex = indexAt(m_mouseEnd);
     viewport()->update();
 
+}
+
+void TracklistView::leaveEvent(QEvent *event)
+{
+    m_mouseHeld = false;
+    selectionModel()->clear();
+    m_hoverIndex = QModelIndex();
+    QAbstractItemView::leaveEvent(event);
 }
 
 void TracklistView::selectionChanged(const QItemSelection &selected, const QItemSelection &deselected)
@@ -185,7 +264,8 @@ void TracklistView::selectionChanged(const QItemSelection &selected, const QItem
 
 void TracklistView::dropEvent(QDropEvent *event)
 {
-    QModelIndex index = indexAt(event->pos());
+    m_hoverIndex = indexAt(m_mouseEnd);
+    QModelIndex index = indexAt(event->position().toPoint());
     if (dragDropMode() == InternalMove) {
         if (event->source() != this || !(event->possibleActions() & Qt::MoveAction))
             return;
@@ -205,7 +285,66 @@ void TracklistView::dropEvent(QDropEvent *event)
     stopAutoScroll();
     setState(NoState);
     viewport()->update();
+    selectionModel()->clear();
+    isDragging = false;
+    m_mouseHeld = false;
 
 
 }
+
+void TracklistView::dragMoveEvent(QDragMoveEvent *event)
+{
+    m_mouseEnd = event->pos();
+    m_hoverIndex = indexAt(m_mouseEnd);
+    if (event->source() != this || !(event->possibleActions() & Qt::MoveAction))
+        return;
+
+
+    QAbstractItemView::dragMoveEvent(event);
+
+}
+
+void TracklistView::resizeEvent(QResizeEvent *event)
+{
+    updateScrollBars();
+    QAbstractItemView::resizeEvent(event);
+}
+
+void TracklistView::showEvent(QShowEvent *event)
+{
+    updateScrollBars();
+    QAbstractItemView::showEvent(event);
+}
+
+void TracklistView::scrollContentsBy(int dx, int dy)
+{
+    m_scrollOffset -= QPoint(dx, dy);
+    QAbstractItemView::scrollContentsBy(dx, dy);
+    updateEditorGeometries();
+
+    emit scrolled(dx,dy);
+}
+
+void TracklistView::updateEditorGeometries()
+{
+    QAbstractItemView::updateEditorGeometries();
+
+    for (int i = 0; i < model()->rowCount(); ++i){
+        QModelIndex trackIndex = model()->index(i,0);
+
+        QWidget *editor = indexWidget(trackIndex);
+        if(!editor){
+            continue;
+        }
+
+        QRect rect  = editor->rect();
+        QPoint topInView = editor->mapToParent(rect.topLeft());
+        if(topInView.y()<40){
+            int offset = 40-topInView.y();
+            editor->setMask(QRegion(0,offset,editor->width(),editor->height()));
+        }
+
+    }
+}
+
 
