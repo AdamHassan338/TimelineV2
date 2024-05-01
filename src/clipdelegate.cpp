@@ -21,23 +21,13 @@ void ClipDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     painter->save();
     painter->setClipRect(option.rect);
     painter->setClipping(true);
-    const TimelineModel* model     = static_cast<const TimelineModel*>(index.model());
-    int start;
-    int end;
-    int pos;
+
     //not a clip
     if(index.parent()==QModelIndex()){
         return;
     }
-
-    start = model->data(index,TimelineModel::ClipInRole).toInt();
-    end = model->data(index,TimelineModel::ClipOutRole).toInt();
-    pos = model->data(index,TimelineModel::ClipPosRole).toInt();
     int track = index.parent().row();
 
-    int length = start-end;
-
-    QPoint topLeft(pos,track*trackHeight + rulerHeight);
     if(option.state & QStyle::State_Selected){
         painter->save();
         int penWidth = 4;

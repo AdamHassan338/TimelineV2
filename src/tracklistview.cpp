@@ -65,8 +65,8 @@ QRect TracklistView::itemRect(const QModelIndex &index) const
     int trackHeight = 25;
     int rulerHeight = 40;
 
-    //if(!index.isValid()||index.parent()!=QModelIndex())
-      //  return QRect();
+    if(!index.isValid())
+        return QRect();
 
     return QRect(0, (index.row() * trackHeight) + rulerHeight, viewport()->width(), trackHeight);
 
@@ -84,8 +84,8 @@ QModelIndex TracklistView::indexAt(const QPoint &point) const
     if(point.y()<0)//if above the ruler
         return index;
     if(rullerRect.contains(point)){
-        qDebug()<< "Clicked ruller: ";
-        return index;}
+        return index;
+    }
 
 
     int columnIndex = model()->columnCount()-1;
@@ -94,7 +94,6 @@ QModelIndex TracklistView::indexAt(const QPoint &point) const
         if (visualRect(model()->index(i, columnIndex,QModelIndex())).contains(point))
         {
             index = model()->index(i,columnIndex,QModelIndex());
-            qDebug()<< "Clicked Track list: " << i;
             return index;
         }
     }
@@ -294,7 +293,7 @@ void TracklistView::dropEvent(QDropEvent *event)
 
 void TracklistView::dragMoveEvent(QDragMoveEvent *event)
 {
-    m_mouseEnd = event->pos();
+    m_mouseEnd = event->position().toPoint();
     m_hoverIndex = indexAt(m_mouseEnd);
     if (event->source() != this || !(event->possibleActions() & Qt::MoveAction))
         return;

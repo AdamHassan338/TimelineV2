@@ -13,11 +13,10 @@ class TimelineModel : public QAbstractItemModel
 public:
     TimelineModel();
 
-    //void addTrack(int x);
     void addClip(int trackIndex, int pos, int in, int out);
     void deleteClip(QModelIndex clipIndex);
 
-    void moveClipToTrack(QModelIndex clipIndex,QModelIndex newTrackIndex);
+    int moveClipToTrack(QModelIndex clipIndex,QModelIndex newTrackIndex);
     //re calcualtes the length of timeline in frames
     void reCalculateLength();
     std::vector<TrackModel*> m_tracks;
@@ -38,6 +37,8 @@ public:
 
 signals:
     void timelineUpdated();
+    void newClip(int row,int track);
+    void trackMoved(int oldIndex,int newIndex);
 
 private:
     //length of the timeline, grows automaticly with clips
@@ -60,14 +61,12 @@ private:
     int findClipRow(TrackModel* track,ClipModel* clip) const;
 
     quint64 assignIdToTrack(TrackModel* track){
-        qDebug()<<nextId;
         quint64 id = nextId++;
         m_idToObjectMap[id] = track;
         m_trackIDs.insert(id);
         return id;
     };
     quint64 assignIdToClip(ClipModel* clip){
-        qDebug()<<nextId;
         quint64 id = nextId++;
         m_idToObjectMap[id] = clip;
         m_clipIDs.insert(id);

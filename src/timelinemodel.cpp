@@ -95,29 +95,31 @@ void TimelineModel::insertClip(ClipModel *clip, QModelIndex parentTrackIndex){
     quint64 id = assignIdToClip(clip);
 
     endInsertRows();
+
+    emit newClip(rows,parentTrackIndex.row());
 }
 
-void TimelineModel::moveClipToTrack(QModelIndex clipIndex, QModelIndex newTrackIndex)
+int TimelineModel::moveClipToTrack(QModelIndex clipIndex, QModelIndex newTrackIndex)
 {
     if(!clipIndex.isValid()){
         qDebug()<<"invalid clipindex when moving clip to track";
-        return;
+        return-1;
     }
     const QModelIndex parentTrackIndex = clipIndex.parent();
 
     if(!parentTrackIndex.isValid()){
         qDebug()<<"invalid parentTrackIndex when moving clip to track";
-        return;
+        return -1;
     }
 
     if(!newTrackIndex.isValid() ){
-        return;
+        return -1;
 
     }
 
     //if index is of a clip
     if(newTrackIndex.parent().isValid()){
-        return;
+        return -1;
     }
 
     //index is for a new track
@@ -129,7 +131,7 @@ void TimelineModel::moveClipToTrack(QModelIndex clipIndex, QModelIndex newTrackI
         }
     }
 
-
+    int trackNumber =  newTrackIndex.row();
 
     TrackModel* parentTrack = (TrackModel*)FromID(parentTrackIndex.internalId());
     ClipModel* clip = (ClipModel*)FromID(clipIndex.internalId());
@@ -144,6 +146,7 @@ void TimelineModel::moveClipToTrack(QModelIndex clipIndex, QModelIndex newTrackI
 
     emit timelineUpdated();
 
+    return trackNumber;
 
 }
 
@@ -216,7 +219,7 @@ TrackModel *TimelineModel::findParentTrackOfClip(ClipModel *clip) const {
         qDebug("Clip not in Model");
     }
     if(!clip->Parent())
-        qDebug("Clip HAS NO PARENT?! %i",0);
+        qDebug("Clip HAS NO PARENT?!");
     for (TrackModel* track : m_tracks) {
         if(std::find(track->getClips().cbegin(),track->getClips().cend(),clip)!=track->getClips().cend()){
 
@@ -236,7 +239,6 @@ int TimelineModel::findTrackRow(TrackModel *track) const {
 int TimelineModel::findClipRow(TrackModel *track, ClipModel *clip) const{
     std::vector<ClipModel*> clips = track->getClips();
     auto it = std::find(clips.begin(),clips.end(),clip);
-    qDebug()<<it-clips.begin();
     return it-clips.begin();
 }
 
@@ -330,18 +332,7 @@ bool TimelineModel::dropMimeData(const QMimeData *data, Qt::DropAction action, i
 
     int newRow = parent.row();
 
-   /* if(parent.row() ==-1){
-        newRow=0;
-    }//else if(!parent.isValid()){
-       // newRow=0;}
-    else if(!hasIndex(parent.row(),parent.column(),parent.parent())){
-        newRow = parent.row()-1;
-    }
-    if(row!=-1){
-        newRow =row;
-    }*/
 
-    newRow = parent.row();
     if(!parent.isValid()){
         newRow=0;
     }
@@ -379,6 +370,7 @@ bool TimelineModel::dropMimeData(const QMimeData *data, Qt::DropAction action, i
         m_tracks.erase(m_tracks.begin()+ track);
         m_tracks.insert(m_tracks.begin() + newRow,itemsToMove.begin(),itemsToMove.end());
         endMoveRows();
+        emit trackMoved(track,newRow);
 
 
     }
@@ -465,7 +457,6 @@ QModelIndex TimelineModel::parent(const QModelIndex &child) const
 
 
         //Q_ASSERT(parentItem);
-        //qDebug("number clips on track %i : %zu", findTrackRow(track),track->getClips().size());
         return createIndex(findTrackRow(track), 0,quintptr(findID(track)));
     }
 

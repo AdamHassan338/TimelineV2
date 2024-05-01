@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     model->addClip(4,165,0,50);
 
 
-    //model->add(0);
+
     TimelineView* view = new TimelineView();
     view->resize(880,230);
     TracklistView* tracklist = new TracklistView();
@@ -80,6 +80,10 @@ int main(int argc, char *argv[])
     QObject::connect(slider,&QSlider::valueChanged,view,&TimelineView::setScale);
     QObject::connect(view,&TimelineView::scrolled,tracklist,&TracklistView::scroll);
     QObject::connect(tracklist,&TracklistView::scrolled,view,&TimelineView::scroll);
+
+    QObject::connect(model,&TimelineModel::newClip,view,&TimelineView::addClipToMap);
+    QObject::connect(model,&TimelineModel::trackMoved,view,&TimelineView::TrackMoved);
+
     return a.exec();
 
 }

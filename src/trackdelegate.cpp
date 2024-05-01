@@ -88,8 +88,7 @@ void TrackDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionView
     int rulerHeight = 40;
     editor->setGeometry(option.rect);
     QRegion mask = QRegion(0,rulerHeight,option.rect.right(),option.rect.bottom()-rulerHeight);
-        editor->clearMask();
-    qDebug()<<editor->rect();
+    editor->clearMask();
 
 }
 

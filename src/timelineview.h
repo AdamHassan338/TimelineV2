@@ -1,8 +1,28 @@
-#ifndef TIMELINEVIEW_H
+﻿#ifndef TIMELINEVIEW_H
 #define TIMELINEVIEW_H
 
 #include <QAbstractItemView>
 #include "clipdelegate.h"
+#include <unordered_map>
+
+//cache rect if needed;
+struct Clip{
+    int pos;
+    int in;
+    int out;//add 1 when drawring :D
+    //int orginalIn;
+    int originalOut;
+    int track;
+    QString name;
+    Clip() : pos(0), in(0), out(0), originalOut(0), track(0), name("") {}
+
+    Clip(int pos,int in, int out,int track) : pos(pos),in(in),out(out),track(track), originalOut(out),name("")
+    {}
+};
+
+struct track{
+    int number;
+};
 
 enum  hoverState {LEFT,RIGHT,NONE};
 
@@ -14,6 +34,15 @@ public:
     void updateScrollBars();
 
 private:
+
+    std::unordered_map<quint64,Clip*> clipMap;
+    Clip* getClipFromMap(quint64 id) const{
+        const auto clipIter = clipMap.find(id);
+        return clipMap.at(id);
+    }
+
+
+
     QRect itemRect(const QModelIndex &index) const;
 
     QPoint m_scrollOffset;
@@ -53,6 +82,9 @@ public slots:
 
     void setScale(double value);
 
+    void addClipToMap(int row,int track);
+
+    void TrackMoved(int src,int dest);
 
     // QAbstractItemView interface
 public:
