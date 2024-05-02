@@ -193,6 +193,18 @@ QString::number(model()->data(model()->index(i,0),TimelineModel::TrackNumberRole
 
     painter.restore();
 
+    painter.save();
+
+    QRect ruler(0,  0, viewport()->width(), rulerHeight);
+
+    painter.setPen(Qt::white);
+    QFont font;
+    font.setPixelSize(20);
+    painter.setFont(font);
+    painter.drawText(ruler,Qt::AlignCenter,QString::number(m_time));
+    painter.restore();
+
+
 
 
 

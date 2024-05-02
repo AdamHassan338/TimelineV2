@@ -258,6 +258,7 @@ void TimelineModel::movePlayhead(int dx)
         playheadPos=0;
 
     qDebug()<<"frame: " <<playheadPos;
+    emit playheadMoved(playheadPos);
     emit timelineUpdated();
 }
 
@@ -276,7 +277,7 @@ void TimelineModel::setPlayheadPos(int newPlayheadPos)
     if(newPlayheadPos>m_length)
         return;
     playheadPos = newPlayheadPos;
-
+    emit playheadMoved(newPlayheadPos);
     emit timelineUpdated();
 }
 

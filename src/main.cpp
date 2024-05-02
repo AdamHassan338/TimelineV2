@@ -84,6 +84,8 @@ int main(int argc, char *argv[])
     QObject::connect(model,&TimelineModel::newClip,view,&TimelineView::addClipToMap);
     QObject::connect(model,&TimelineModel::trackMoved,view,&TimelineView::TrackMoved);
 
+    QObject::connect(model,&TimelineModel::playheadMoved,tracklist,&TracklistView::setTime);
+
     return a.exec();
 
 }

@@ -20,9 +20,16 @@ public slots:
         updateEditorGeometries();
         QAbstractItemView::scrollContentsBy(dx, dy);};
 
+    void setTime(int frame){
+        m_time=frame;
+        viewport()->update();
+    };
+
 private:
 
     TrackDelegate delegate;
+
+    int m_time = 0;
 
     QRect itemRect(const QModelIndex &index) const;
 

@@ -75,7 +75,6 @@ private:
 
 signals:
     void scrolled(int dx,int dy);
-
 public slots:
     void scroll(int dx, int dy){    m_scrollOffset -= QPoint(dx, dy);
         QAbstractItemView::scrollContentsBy(dx, dy);};

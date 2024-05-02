@@ -35,10 +35,13 @@ public:
 
     void moveTrack(QModelIndex track,QModelIndex dest);
 
+
+
 signals:
     void timelineUpdated();
     void newClip(int row,int track);
     void trackMoved(int oldIndex,int newIndex);
+    void playheadMoved(int frame);
 
 private:
     //length of the timeline, grows automaticly with clips
