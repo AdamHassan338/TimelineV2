@@ -570,16 +570,16 @@ void TimelineView::mouseMoveEvent(QMouseEvent *event)
             int pos = c->pos;
             int length = c->originalOut;
             if(m_mouseUnderClipEdge==hoverState::LEFT){
-                int newIn = std::clamp(in+ pointToFrame(m_mouseEnd.x()) - pos,0,out);
+                int newIn = std::clamp(in+ pointToFrame(m_mouseEnd.x() + m_scrollOffset.x()) - pos,0,out);
                 model()->setData(clip,newIn,TimelineModel::ClipInRole);
                 //clamp to prevent clip moveing when resizing
-                moveSelectedClip(std::clamp(pointToFrame(m_mouseEnd.x()) - pos,-in,out-in),0+0,false);
+                moveSelectedClip(std::clamp(pointToFrame(m_mouseEnd.x() + m_scrollOffset.x()) - pos,-in,out-in),0+0,false);
                 Clip* c = getClipFromMap(clip.internalId());
                 c->in = model()->data(clip,TimelineModel::ClipInRole).toInt();
                 viewport()->update();
             }else if(m_mouseUnderClipEdge==hoverState::RIGHT){
                 //clamped to not go over clipin or src media length
-                int newOut = std::clamp(out + pointToFrame(m_mouseEnd.x()) - pos+in-out,in,length);
+                int newOut = std::clamp(out + pointToFrame(m_mouseEnd.x() + m_scrollOffset.x()) - pos+in-out,in,length);
                 model()->setData(clip,newOut,TimelineModel::ClipOutRole);
                 Clip* c = getClipFromMap(clip.internalId());
                 c->out = model()->data(clip,TimelineModel::ClipOutRole).toInt();
