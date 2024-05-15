@@ -33,6 +33,11 @@ public:
     QModelIndex createFakeIndex();
     void movePlayhead(int dx);
 
+    int getPlayheadPos() const;
+    void setPlayheadPos(int newPlayheadPos);
+    /* gets a list*/
+    std::vector<std::pair<const ClipModel*, int>> getUnderPlayhead();
+
     void moveTrack(QModelIndex track,QModelIndex dest);
 
 
@@ -42,15 +47,16 @@ signals:
     void newClip(int row,int track);
     void trackMoved(int oldIndex,int newIndex);
     void playheadMoved(int frame);
-
+    /* Signal contains list of clips along with the frame for each clip the playhead is on. */
+    void underPlayhead(std::vector<std::pair<const ClipModel*, int>>);
     void tracksChanged();
 
 private:
     //length of the timeline, grows automaticly with clips
     int m_length = 0;
-    int playheadPos = 0;
+    int m_playheadPos = 0;
 
-    enum ItemType {
+    enum class ItemType {
         Track,
         Clip,
         Invalid
@@ -92,11 +98,11 @@ private:
 
 
     bool isClip(quint64 id) const{
-        return getType(id)==Clip;
+        return getType(id)==ItemType::Clip;
     }
 
     bool isTrack(quint64 id) const{
-        return getType(id)==Track;
+        return getType(id)==ItemType::Track;
     }
 
     std::unordered_map<quint64, void*> m_idToObjectMap;
@@ -110,14 +116,14 @@ private:
 
     ItemType getType(quint64 id) const{
         if(m_trackIDs.find(id) != m_trackIDs.end()){
-            return Track;
+            return ItemType::Track;
         }
 
         if(m_clipIDs.find(id) != m_clipIDs.end()){
-            return Clip;
+            return ItemType::Clip;
         }
 
-        return Invalid;
+        return ItemType::Invalid;
     }
 
 
@@ -154,11 +160,6 @@ public:
 
     };
 
-
-    // QAbstractItemModel interface
-public:
-    int getPlayheadPos() const;
-    void setPlayheadPos(int newPlayheadPos);
 
     // QAbstractItemModel interface
 public:

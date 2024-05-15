@@ -547,7 +547,7 @@ void TimelineView::mousePressEvent(QMouseEvent *event)
 
     }
     if(selectionModel()->selectedIndexes().isEmpty()){
-        ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x()+m_scrollOffset.x())));
+        movePlayheadToFrame(pointToFrame(std::max(0,m_mouseEnd.x()+m_scrollOffset.x())));
         viewport()->update();
     }
 
@@ -592,13 +592,14 @@ void TimelineView::mouseMoveEvent(QMouseEvent *event)
             moveSelectedClip(pointToFrame(m_mouseEnd.x()+m_mouseOffset.x()),m_mouseEnd.y()+m_mouseOffset.y());
             viewport()->update();
         }else{
-            ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x() + m_scrollOffset.x())));
+
+            movePlayheadToFrame(pointToFrame(std::max(0,m_mouseEnd.x() + m_scrollOffset.x())));
             viewport()->update();
         }
 
         if(m_playheadSelected){
 
-            ((TimelineModel*)model())->setPlayheadPos(pointToFrame(std::max(0,m_mouseEnd.x() + m_scrollOffset.x())));
+            movePlayheadToFrame(pointToFrame(std::max(0,m_mouseEnd.x() + m_scrollOffset.x())));
             viewport()->update();
         }
         return QAbstractItemView::mouseMoveEvent(event);
@@ -655,13 +656,13 @@ void TimelineView::keyPressEvent(QKeyEvent *event)
     switch (event->key()){
     case Qt::Key_Right:
         if(list.isEmpty())
-            timelinemodel->movePlayhead(1);
+            movePlayheadToFrame(timelinemodel->getPlayheadPos()+1);
         moveSelectedClip(1,0,false);
         viewport()->update();
         break;
     case Qt::Key_Left:
         if(list.isEmpty())
-            timelinemodel->movePlayhead(-1);
+            movePlayheadToFrame(timelinemodel->getPlayheadPos()-1);
         moveSelectedClip(-1,0,false);
         viewport()->update();
         break;
@@ -833,6 +834,11 @@ void TimelineView::moveSelectedClip(int dx, int dy, bool isMouse)
     updateScrollBars();
 
 
+}
+
+void TimelineView::movePlayheadToFrame(int frame)
+{
+    ((TimelineModel*)model())->setPlayheadPos(frame);
 }
 
 bool TimelineView::isVideoFile(const QString &filePath)

@@ -75,6 +75,7 @@ private:
 
     //this function moves clips by frame, not viewport pixels
     void moveSelectedClip(int dx, int dy,bool isMouse = true);
+    void movePlayheadToFrame(int frame);
 
     bool m_isDroppingMedia = false;
     QPoint m_lastDragPos;

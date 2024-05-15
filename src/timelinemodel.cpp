@@ -7,6 +7,7 @@
 #include <QMimeData>
 #include <QIODevice>
 #include <algorithm>
+#include <vector>
 TimelineModel::TimelineModel()
 {
 
@@ -157,6 +158,7 @@ int TimelineModel::moveClipToTrack(QModelIndex clipIndex, QModelIndex newTrackIn
     endMoveRows();
 
     emit timelineUpdated();
+    emit underPlayhead(getUnderPlayhead());
 
     return trackNumber;
 
@@ -266,33 +268,53 @@ QModelIndex TimelineModel::createFakeIndex()
 
 void TimelineModel::movePlayhead(int dx)
 {
-    if(playheadPos>=0)
-        playheadPos+=dx;
-    if(playheadPos>m_length)
-        playheadPos-=dx;
-    if(playheadPos<0)
-        playheadPos=0;
+    if(m_playheadPos>=0)
+        m_playheadPos+=dx;
+    if(m_playheadPos>m_length)
+        m_playheadPos-=dx;
+    if(m_playheadPos<0)
+        m_playheadPos=0;
 
-    qDebug()<<"frame: " <<playheadPos;
-    emit playheadMoved(playheadPos);
+    qDebug()<<"frame: " <<m_playheadPos;
+    emit playheadMoved(m_playheadPos);
     emit timelineUpdated();
+}
+
+int TimelineModel::getPlayheadPos() const
+{
+    return m_playheadPos;
+}
+
+void TimelineModel::setPlayheadPos(int newPlayheadPos)
+{
+    m_playheadPos = newPlayheadPos;
+
+    emit playheadMoved(newPlayheadPos);
+    emit timelineUpdated();
+    emit underPlayhead(getUnderPlayhead());
+}
+
+std::vector<std::pair<const ClipModel *, int> > TimelineModel::getUnderPlayhead()
+{
+    std::vector<std::pair<const ClipModel*,int>> frameList;
+    for(TrackModel* track : m_tracks){
+        for(const ClipModel* clip : track->getClips()){
+            if(m_playheadPos<clip->pos())
+                continue;
+            if(m_playheadPos>clip->pos()+(clip->out()-clip->in()))
+                continue;
+            int frame = m_playheadPos - clip->pos() + clip->in();
+
+            frameList.emplace_back(std::make_pair(clip,frame));
+        }
+    }
+
+    return frameList;
 }
 
 void TimelineModel::moveTrack(QModelIndex track, QModelIndex dest)
 {
 
-}
-
-int TimelineModel::getPlayheadPos() const
-{
-    return playheadPos;
-}
-
-void TimelineModel::setPlayheadPos(int newPlayheadPos)
-{
-    playheadPos = newPlayheadPos;
-    emit playheadMoved(newPlayheadPos);
-    emit timelineUpdated();
 }
 
 QStringList TimelineModel::mimeTypes() const
@@ -618,18 +640,22 @@ bool TimelineModel::setData(const QModelIndex &index, const QVariant &value, int
         clip = (ClipModel*)FromID(index.internalId());
         clip->setIn(value.toInt());
         emit timelineUpdated();
+        emit underPlayhead(getUnderPlayhead());
         return true;
         break;
     case ClipOutRole:
         clip = (ClipModel*)FromID(index.internalId());
         clip->setOut(value.toInt());
         emit timelineUpdated();
+        emit underPlayhead(getUnderPlayhead());
+
         return true;
         break;
     case ClipPosRole:
         clip = (ClipModel*)FromID(index.internalId());
         clip->setPos(value.toInt());
         emit timelineUpdated();
+        emit underPlayhead(getUnderPlayhead());
         return true;
         break;
     defualt:
