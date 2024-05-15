@@ -3,6 +3,7 @@
 #include "timelinewidget.h"
 #include "timelineview.h"
 #include "tracklistview.h"
+#include "types.h"
 
 #include <QApplication>
 #include <QToolBar>
@@ -10,42 +11,41 @@
 #include <QSplitter>
 int main(int argc, char *argv[])
 {
-    QColor bg = QColor("#262626");
-    QColor fill = QColor("#202020");
-    QColor seperator = QColor("#313131");
-
     QApplication a(argc, argv);
     qApp->setStyle(QStyleFactory::create("fusion"));
+    qRegisterMetaType<MediaType>("MediaType");
+
     //TimelineWidget w;
     //w.show();
     QSplitter* splitter = new QSplitter(Qt::Horizontal);
     TimelineModel* model = new TimelineModel();
-    model->createTrack();
-    model->createTrack();
-    model->createTrack();
-    model->createTrack();
-    model->createTrack();
-
-    model->createTrack();
-    model->createTrack();
-    model->createTrack();
+    model->createTrack(MediaType::VIDEO);
+    model->createTrack(MediaType::AUDIO);
+    //model->createTrack();
+    //model->createTrack();
+    //model->createTrack();
+//
+    //model->createTrack();
+    //model->createTrack();
+    //model->createTrack();
 
     // track pos in out
     model->addClip(0,0,0,30);
-    model->addClip(1,20,0,30);
-    model->addClip(1,51,0,30);
-
-    model->addClip(2,5,0,30);
-    model->addClip(2,40,0,25);
-    model->addClip(2,80,0,20);
-
-    model->addClip(3,70,0,30);
-    model->addClip(5,60,0,30);
-    model->addClip(5,100,0,30);
-
-    model->addClip(4,80,0,30);
-    model->addClip(4,131,0,25);
-    model->addClip(4,165,0,50);
+    model->addClip(1,0,0,30);
+    //model->addClip(1,20,0,30);
+    //model->addClip(1,51,0,30);
+//
+    //model->addClip(2,5,0,30);
+    //model->addClip(2,40,0,25);
+    //model->addClip(2,80,0,20);
+//
+    //model->addClip(3,70,0,30);
+    //model->addClip(5,60,0,30);
+    //model->addClip(5,100,0,30);
+//
+    //model->addClip(4,80,0,30);
+    //model->addClip(4,131,0,25);
+    //model->addClip(4,165,0,50);
 
 
 

@@ -734,9 +734,8 @@ void TimelineView::moveSelectedClip(int dx, int dy, bool isMouse)
         int newTrack = ((TimelineModel*)model())->moveClipToTrack(list[0],indexAt(m_mouseEnd));
         if(newTrack!=-1)
            c->track = newTrack;
-        return;
-    }
-    if(!isMouse && dy!=0){
+
+    }else if(!isMouse && dy!=0){
         QModelIndex nextTrack;
         if( dy>0 && list[0].parent().row()==model()->rowCount()-1){
             nextTrack = ((TimelineModel*)model())->createFakeIndex();

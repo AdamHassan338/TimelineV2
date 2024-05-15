@@ -23,7 +23,7 @@ void TimelineModel::addClip(int trackIndex, int pos, int in, int out)
     QModelIndex parentIndex = index(trackIndex, 0, QModelIndex());
 
 
-    ClipModel* clip = new ClipModel(pos,in,out,track);
+    ClipModel* clip = new ClipModel(pos,in,out,track,track->type());
 
     insertClip(clip,parentIndex);
 
@@ -121,20 +121,27 @@ int TimelineModel::moveClipToTrack(QModelIndex clipIndex, QModelIndex newTrackIn
     if(newTrackIndex.parent().isValid()){
         return -1;
     }
+    TrackModel* parentTrack = (TrackModel*)FromID(parentTrackIndex.internalId());
+    ClipModel* clip = (ClipModel*)FromID(clipIndex.internalId());
+
 
     //index is for a new track
     if(!hasIndex(newTrackIndex.row(),newTrackIndex.column(),newTrackIndex.parent())){
         if(newTrackIndex!=QModelIndex()){
-            createTrack();
-            int x = rowCount(QModelIndex());
+            createTrack(clip->type());
             newTrackIndex = index(rowCount(QModelIndex())-1,columnCount(QModelIndex())-1,QModelIndex());
+        }
+    }else {
+        TrackModel* newTrack = (TrackModel*)FromID(newTrackIndex.internalId());
+
+        if(clip->type()!=newTrack->type()){
+            return -1;
         }
     }
 
     int trackNumber =  newTrackIndex.row();
 
-    TrackModel* parentTrack = (TrackModel*)FromID(parentTrackIndex.internalId());
-    ClipModel* clip = (ClipModel*)FromID(clipIndex.internalId());
+
     TrackModel* newTrack = (TrackModel*)FromID(newTrackIndex.internalId());
 
     beginMoveRows(parentTrackIndex,clipIndex.row(),clipIndex.row(),newTrackIndex,rowCount(newTrackIndex));
@@ -200,11 +207,12 @@ void TimelineModel::cutClip(QModelIndex clipIndex, int cutFrame)
 
 }
 
-void TimelineModel::createTrack()
+void TimelineModel::createTrack(MediaType type)
 {
+
     int rows = rowCount(QModelIndex());
 
-    TrackModel* track = new TrackModel(rowCount(QModelIndex()));
+    TrackModel* track = new TrackModel(rowCount(QModelIndex()),type);
 
     beginInsertRows(QModelIndex(),rows,rows); //zero indexed
     m_tracks.push_back(track);
@@ -526,7 +534,25 @@ QVariant TimelineModel::data(const QModelIndex &index, int role) const
 
     if(!index.parent().isValid()){
         TrackModel* track;
-        if(role==Qt::ToolTipRole){
+        switch (role){
+        case Qt::ToolTipRole:
+            track = (TrackModel*)FromID(index.internalId());
+            return QVariant::fromValue("track " + QString::number(index.row()));
+            break;
+        case TrackNumberRole:
+            track = (TrackModel*)FromID(index.internalId());
+            return QVariant::fromValue(index.row());
+            return QVariant::fromValue("track " + QString::number(index.row()));
+            break;
+        case TrackTypeRole:
+            track = (TrackModel*)FromID(index.internalId());
+            return QVariant::fromValue(track->type());
+            break;
+        default:
+            return QVariant::fromValue(NULL);
+        }
+
+        /*if(role==Qt::ToolTipRole){
             track = (TrackModel*)FromID(index.internalId());
             return QVariant::fromValue("track " + QString::number(index.row()));
         }
@@ -535,7 +561,7 @@ QVariant TimelineModel::data(const QModelIndex &index, int role) const
             track = (TrackModel*)FromID(index.internalId());
             return QVariant::fromValue(index.row());
         }
-        return QVariant();
+        return QVariant();*/
     }
     ClipModel* clip;
     switch (role){
@@ -554,12 +580,15 @@ QVariant TimelineModel::data(const QModelIndex &index, int role) const
     case ClipLengthRole:
         clip = (ClipModel*)FromID(index.internalId());
         return QVariant::fromValue(clip->length());
-        return true;
         break;
-    defualt:
-        return "clip";
+    case ClipTypeRole:
+        clip = (ClipModel*)FromID(index.internalId());
+        return QVariant::fromValue(clip->type());
+        break;
+    default:
+        return QVariant::fromValue(NULL);
     }
-    return "null";
+    return QVariant::fromValue(NULL);
 }
 
 bool TimelineModel::setData(const QModelIndex &index, const QVariant &value, int role)
@@ -612,7 +641,9 @@ QHash<int, QByteArray> TimelineModel::roleNames() const
     roles[ClipInRole] = "clipIn";
     roles[ClipOutRole] = "clipOut";
     roles[ClipPosRole] = "clipPos";
+    roles[ClipTypeRole] = "clipType";
     roles[TrackNumberRole] = "trackNumber";
+    roles[TrackTypeRole] = "trackType";
     roles[SelectedRole] = "selected";
     roles[InRole] = "in";
     roles[OutRole] = "out";

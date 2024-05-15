@@ -1,6 +1,6 @@
 #include "trackmodel.h"
 
-TrackModel::TrackModel(int number) : m_number(number)
+TrackModel::TrackModel(int number, MediaType type) : m_number(number), m_type(type)
 {
 
 }
@@ -16,5 +16,10 @@ void TrackModel::removeClip(ClipModel *clip)
     if(it!=m_clips.end())
         m_clips.erase(it);
 
+}
+
+MediaType TrackModel::type() const
+{
+    return m_type;
 }
 

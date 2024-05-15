@@ -13,11 +13,27 @@ ClipDelegate::ClipDelegate(QObject *parent)
 void ClipDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     QColor clipColour("#729ACC");
+    QColor videoColour("#729ACC");
+    QColor audioColour("#cc72c7");
     QColor cornerColour("#c8c8c8");
     if(option.state & QStyle::State_MouseOver)
            clipColour = clipColour.darker(150);
     int trackHeight = 25;
     int rulerHeight = 40;
+
+    QString text;
+    switch (index.data(TimelineModel::ClipTypeRole).value<MediaType>()){
+    case MediaType::VIDEO:
+        text = "Video";
+        clipColour = videoColour;
+        break;
+    case MediaType::AUDIO:
+        text = "Audio";
+        clipColour = audioColour;
+        break;
+
+    }
+
     painter->save();
     painter->setClipRect(option.rect);
     painter->setClipping(true);
@@ -45,7 +61,7 @@ void ClipDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
         painter->drawRect(option.rect);
     }
 
-    QString text("Video.mp4");
+
     QRect   textRect = painter->fontMetrics().boundingRect(text);
     int textOffset = textRect.height();
     textRect.translate(0,textOffset);

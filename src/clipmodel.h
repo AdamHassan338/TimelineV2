@@ -1,16 +1,18 @@
 #ifndef CLIPMODEL_H
 #define CLIPMODEL_H
+#include "types.h"
 
 class TrackModel;
+
 
 class ClipModel
 {
 public:
-    ClipModel(int pos,int in, int out,TrackModel* parent);
+    ClipModel(int pos,int in, int out,TrackModel* parent,MediaType type = MediaType::VIDEO);
 
     //copy constructor
     ClipModel(const ClipModel& other)
-        : m_pos(other.m_pos), m_in(other.m_in), m_out(other.m_out), m_parent(other.m_parent), m_length(other.m_length) {
+        : m_pos(other.m_pos), m_in(other.m_in), m_out(other.m_out), m_parent(other.m_parent), m_length(other.m_length), m_type(other.m_type) {
     }
 
     //copy assignment operator
@@ -21,6 +23,7 @@ public:
             m_out = other.m_out;
             m_parent = other.m_parent;
             m_length = other.m_length;
+            m_type = other.m_type;
 
         }
         return *this;
@@ -47,8 +50,11 @@ public:
 
     int length() const;
 
+    MediaType type() const;
+
 private:
     TrackModel* m_parent;
+    MediaType m_type;
     //store resoruce here
     int m_pos;//position on timeline of first frame
     int m_in;//start time of clip from resource

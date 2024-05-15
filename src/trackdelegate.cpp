@@ -5,6 +5,7 @@
 #include <QLayout>
 #include <QSpacerItem>
 #include <QLabel>
+#include "timelinemodel.h"
 TrackDelegate::TrackDelegate(QObject *parent)
     : QAbstractItemDelegate{parent}
 {}
@@ -34,7 +35,18 @@ void TrackDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option,
 
     painter->restore();
     painter->setPen(Qt::white);
-    painter->drawText(option.rect,Qt::AlignLeft,option.text);
+    QString text;
+
+    switch (index.data(TimelineModel::TrackTypeRole).value<MediaType>()){
+    case MediaType::VIDEO:
+        text = "V"+option.text;
+        break;
+    case MediaType::AUDIO:
+        text = "A"+option.text;
+        break;
+    }
+
+    painter->drawText(option.rect,Qt::AlignLeft,text);
 
 
     painter->restore();

@@ -4,9 +4,9 @@
 #include <QAbstractItemModel>
 #include <unordered_set>
 #include <unordered_map>
+#include "trackmodel.h"
+#include "clipmodel.h"
 
-class TrackModel;
-class ClipModel;
 class TimelineModel : public QAbstractItemModel
 {
     Q_OBJECT
@@ -25,7 +25,7 @@ public:
     //cut action key is Qt::Key_S
     void cutClip(QModelIndex clipIndex, int cutFrame);
 
-    void createTrack();
+    void createTrack(MediaType type = MediaType::VIDEO);
     void* FromID(quint64 id) const{
         return m_idToObjectMap.at(id);
     }
@@ -142,7 +142,9 @@ public:
         ClipOutRole,
         ClipPosRole,
         ClipLengthRole,
+        ClipTypeRole,
         TrackNumberRole,
+        TrackTypeRole,
         TimelineLengthRole,
         SelectedRole,
         InRole,
