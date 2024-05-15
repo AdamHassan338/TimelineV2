@@ -43,6 +43,8 @@ signals:
     void trackMoved(int oldIndex,int newIndex);
     void playheadMoved(int frame);
 
+    void tracksChanged();
+
 private:
     //length of the timeline, grows automaticly with clips
     int m_length = 0;
@@ -124,9 +126,9 @@ private:
 
     // QAbstractItemModel interface
 public:
-    QModelIndex index(int row, int column, const QModelIndex &parent) const override;
+    QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
     QModelIndex parent(const QModelIndex &child) const override;
-    int rowCount(const QModelIndex &parent) const override;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent) const override;
 
     QVariant data(const QModelIndex &index, int role) const override;

@@ -25,6 +25,10 @@ public slots:
         viewport()->update();
     };
 
+    void updateViewport(){
+        viewport()->update();
+    }
+
 private:
 
     TrackDelegate delegate;

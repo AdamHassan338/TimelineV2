@@ -5,8 +5,9 @@
 #include <QPaintEvent>
 #include <QPainter>
 #include <QScrollBar>
+#include <QFileInfo>
+#include <QMimeData>
 #include "timelinemodel.h"
-#include <unordered_map>
 
 int trackHeight = 25;
 int rulerHeight = 40;
@@ -32,6 +33,7 @@ TimelineView::TimelineView(QWidget *parent) : QAbstractItemView{parent}
     setAutoScroll(true);
     setAutoScrollMargin(5);
     setMouseTracking(true);
+    setAcceptDrops(true);
 
 }
 
@@ -710,6 +712,85 @@ void TimelineView::showEvent(QShowEvent *event)
     QAbstractItemView::showEvent(event);
 }
 
+void TimelineView::dragEnterEvent(QDragEnterEvent *event)
+{
+    /* TODO */
+    /* Open media and get info of streams */
+    /* On Drop Create clips form Streams */
+    if (event->mimeData()->hasUrls())
+    {
+        bool hasVideoFiles = false;
+        QList<QUrl> urls = event->mimeData()->urls();
+        for (const QUrl& url : urls)
+        {
+            if (isVideoFile(url.toLocalFile()))
+            {
+                hasVideoFiles = true;
+                break;
+            }
+            /* TODO */
+            /* add support for dropping mutliple items at once*/
+            /* first item goes at drop position */
+            /* all subsequent items postions are after the end of then previouse item */
+            break;
+        }
+
+        if (hasVideoFiles)
+        {
+            m_isDroppingMedia = true;
+            m_lastDragPos = event->position().toPoint();
+            event->acceptProposedAction();
+        }
+    }else{
+        QAbstractItemView::dragEnterEvent(event);
+    }
+
+
+}
+
+void TimelineView::dragMoveEvent(QDragMoveEvent *event)
+{
+    if(m_isDroppingMedia){
+        m_lastDragPos = event->position().toPoint();
+        event->acceptProposedAction();
+    }else{
+        QAbstractItemView::dragMoveEvent(event);
+    }
+}
+
+void TimelineView::dropEvent(QDropEvent *event)
+{
+    if(m_isDroppingMedia){
+        m_lastDragPos = event->position().toPoint();
+        QModelIndex trackIndex;
+        TimelineModel* timelineModel = ((TimelineModel*)model());
+        QRect rullerRect(-m_scrollOffset.x(),0,viewport()->width() + m_scrollOffset.x(),rulerHeight);
+        /* If above or on the ruler drop on the first track*/
+        if(m_lastDragPos.y()<0 || rullerRect.contains(m_lastDragPos)){
+            if(timelineModel->rowCount()>0)
+                trackIndex = model()->index(0, 0);
+        }else{
+            /* Find track at drop point */
+            for(int i = 0; i < timelineModel->rowCount(); i++){
+                if (visualRect(timelineModel->index(i, 0)).contains(m_lastDragPos)){
+                    trackIndex = timelineModel->index(i,0);
+                }
+            }
+        }
+        /* If dropped out side of tracks */
+        if(!trackIndex.isValid()){
+            trackIndex = timelineModel->createFakeIndex();
+        }
+        int pos = pointToFrame(m_lastDragPos.x());
+        timelineModel->addClip(trackIndex.row(),pos,0,30);
+
+        viewport()->update();
+
+    }else{
+        QAbstractItemView::dropEvent(event);
+    }
+}
+
 void TimelineView::moveSelectedClip(int dx, int dy, bool isMouse)
 {
 
@@ -752,6 +833,15 @@ void TimelineView::moveSelectedClip(int dx, int dy, bool isMouse)
     updateScrollBars();
 
 
+}
+
+bool TimelineView::isVideoFile(const QString &filePath)
+{
+    QFileInfo fileInfo(filePath);
+    QString suffix = fileInfo.suffix().toLower();
+    QStringList supportedVideoFormats = {"mp4", "mkv", "mov"}; // Add more video formats as needed
+
+    return supportedVideoFormats.contains(suffix);
 }
 
 

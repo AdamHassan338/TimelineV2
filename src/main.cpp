@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
     QObject::connect(model,&TimelineModel::trackMoved,view,&TimelineView::TrackMoved);
 
     QObject::connect(model,&TimelineModel::playheadMoved,tracklist,&TracklistView::setTime);
+    QObject::connect(model,&TimelineModel::tracksChanged,tracklist,&TracklistView::updateViewport);
 
     return a.exec();
 

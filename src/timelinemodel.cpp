@@ -14,8 +14,13 @@ TimelineModel::TimelineModel()
 
 void TimelineModel::addClip(int trackIndex, int pos, int in, int out)
 {
+    TrackModel* track;
+    /* If fake index create new track. */
+    if(!hasIndex(trackIndex,0)){
+       createTrack();
+    }
 
-    TrackModel* track = m_tracks.at(trackIndex);
+    track = m_tracks.at(trackIndex);
     if (!track) {
         return;
     }
@@ -159,9 +164,11 @@ int TimelineModel::moveClipToTrack(QModelIndex clipIndex, QModelIndex newTrackIn
 
 void TimelineModel::reCalculateLength()
 {
+    int max = 0;
     for(const ClipModel* clip : m_clips){
-        m_length =  std::max(m_length,clip->out() - clip->in() + clip->pos());
+        max =  std::max(max,clip->out() - clip->in() + clip->pos());
     }
+    m_length = max;
 
 }
 
@@ -219,6 +226,7 @@ void TimelineModel::createTrack(MediaType type)
     quint64 id = assignIdToTrack(track);
     endInsertRows();
 
+    emit tracksChanged();
     emit timelineUpdated();
 }
 
@@ -282,8 +290,6 @@ int TimelineModel::getPlayheadPos() const
 
 void TimelineModel::setPlayheadPos(int newPlayheadPos)
 {
-    if(newPlayheadPos>m_length)
-        return;
     playheadPos = newPlayheadPos;
     emit playheadMoved(newPlayheadPos);
     emit timelineUpdated();
@@ -294,7 +300,6 @@ QStringList TimelineModel::mimeTypes() const
     QStringList types;
     types << "application/vnd.track";
     return types;
-   //return QAbstractItemModel::mimeTypes();
 }
 
 QMimeData *TimelineModel::mimeData(const QModelIndexList &indexes) const

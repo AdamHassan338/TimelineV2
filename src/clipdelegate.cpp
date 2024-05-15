@@ -43,9 +43,9 @@ void ClipDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
         return;
     }
     int track = index.parent().row();
-
+    painter->save();
     if(option.state & QStyle::State_Selected){
-        painter->save();
+
         int penWidth = 4;
         painter->setPen(QPen(Qt::white,penWidth));
         painter->setBrush(QBrush(clipColour));
@@ -54,12 +54,16 @@ void ClipDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
 
 
 
-        painter->restore();
-    }else{
+
+    }else {
         painter->setPen(clipColour.darker(300));
-        painter->setBrush(QBrush(clipColour));
+        if (option.state & QStyle::State_MouseOver)
+            painter->setBrush(QBrush(clipColour.darker(150)));
+        else
+            painter->setBrush(QBrush(clipColour));
         painter->drawRect(option.rect);
     }
+    painter->restore();
 
 
     QRect   textRect = painter->fontMetrics().boundingRect(text);

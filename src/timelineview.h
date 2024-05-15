@@ -73,6 +73,14 @@ private:
     int getTrackWdith() const;
     int getPlayheadPos();
 
+    //this function moves clips by frame, not viewport pixels
+    void moveSelectedClip(int dx, int dy,bool isMouse = true);
+
+    bool m_isDroppingMedia = false;
+    QPoint m_lastDragPos;
+
+    bool isVideoFile(const QString& filePath);
+
 signals:
     void scrolled(int dx,int dy);
 public slots:
@@ -124,9 +132,10 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
 
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dragMoveEvent(QDragMoveEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 
-    //this function moves clips by frame, not viewport pixels
-    void moveSelectedClip(int dx, int dy,bool isMouse = true);
 
 };
 
